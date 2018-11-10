@@ -974,7 +974,8 @@ long   lSRAMLength;
 	int 				peernamelen;
 	char				sIPAddr[99];
 	int         nI;
-
+  int        poptval;
+  int         poptlen;
 
 
 
@@ -1020,7 +1021,18 @@ else
 
 }
 
+poptlen = sizeof(poptval);
+if (MOSCAD_socket_getsockopt(sock,MOSCAD_SOCKET_SOL_SOCKET,MOSCAD_SOCKET_SO_NONBLOCK,&poptval,&poptlen)==0)
+{
+	MOSCAD_sprintf(msg, "getsockopt: %d", poptval);
+	MOSCAD_message(msg);
+}
+else
+{
+	MOSCAD_sprintf(msg, "getsockopt error: %d", sock);
+	MOSCAD_message(msg);
 
+}
 
 /* Assume sock has been opened previously */
 /*if ( (retval = MOSCAD_socket_ioctl(sock, MOSCAD_SOCKET_FIONBIO, &nonblock)) == 0)
@@ -1117,7 +1129,7 @@ else
 			
 		}
 		
-		/* Egyelõre nem engedek új socket-t nyitni !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! GZS 2009.06.25. */
+		/* Ha a 0. index már aktív  */
 		else if (newsocket[0]>=0  && newsocket[1]<0)
 		{
 			nSI=1;
@@ -1312,45 +1324,17 @@ long         lTimeFIU;
 	
  		MOSCAD_sprintf(msg, "_______STARTED: newsocket[INDX]=%d., INDX=%d,sock=%d",newsocket[INDX],INDX,sock);
 		MOSCAD_message(msg);     
+		
 	
-	
-	
-	
-	
-
 		nTableNum1=1;
     nTableNum2=2;	
 		fnReadPar();
 
-  
-  
-/*  		nTableNum1=1;
-      nTableNum2=2;	
-  		fnReadPar(); */
-  
-	
-	
+  	
 /* Végtelen ciklus----------------------------------------------------------------------------------------------------*/         
 for (;;)
 {         
       MOSCAD_wait(50);
-
-
-
-
-
-      
-/*    		MOSCAD_sprintf(msg, "_______newsocket[INDX]=%d., INDX=%d,sock=%d",newsocket[INDX],INDX,sock);
-		MOSCAD_message(msg);     
-   
-      
- if (newsocket[INDX]<=0)
-  {
-		MOSCAD_sprintf(msg, "newsocket[INDX]=%d., INDX=%d,sock=%d",newsocket[INDX],INDX,sock);
-		MOSCAD_message(msg);      
-	     
-  }          */
-  
   
       
 /*Ha konnektált és jó a dinamikus site tábla --------------------------------------------------------------------------------------------------*/	         
@@ -1364,35 +1348,22 @@ MOSCAD_wait(100);
     nTableNum2=2;	
 		fnReadPar(); 
 
-
-
-
-
 	
-fnSendTESTFR_ACT(INDX);		
+/* fnSendTESTFR_ACT(INDX); */		
 
 
 /*Ha konnektált, akkor jöhet a táviratok adás-vétele -----------------------------------------------------*/
-/*do
-{            */
-
-/*		MOSCAD_sprintf(msg, " %d. socket, Wait for kliens message... , nStarted[INDX]: %d, nDisableWrite: %d",INDX, nStarted[INDX], nDisableWrite);
-		MOSCAD_message(msg); */
-   
-    /*  MOSCAD_wait(500);         */
 /*Receive messages --------------------------------------------------------------------*/   
 memset((void *)sBuff, 0, sizeof(sBuff));   
 retval = 0;   
 retval = MOSCAD_socket_recv(newsocket[INDX], sBuff, sizeof(sBuff), MOSCAD_SOCKET_MSG_DONTWAIT);
 if (retval ==ERR_MOSCAD_SOCKET_ERROR)
 {
-
-
   retval = MOSCAD_socket_errno();
   if (retval == ERR_MOSCAD_SOCKET_EWOULDBLOCK)
   {
-  	/* MOSCAD_sprintf(msg, "1. Connection has been broken error newsocket[0]:%d, newsocket[1]: %d", newsocket[0],newsocket[1]);
-  	MOSCAD_error(msg); */
+  	 MOSCAD_sprintf(msg, "1. Connection has been broken error newsocket[0]:%d, newsocket[1]: %d", newsocket[0],newsocket[1]);
+  	MOSCAD_error(msg); 
 
     MOSCAD_wait(100);
     continue;
@@ -1414,10 +1385,7 @@ if (retval ==ERR_MOSCAD_SOCKET_ERROR)
 else
 {
 
-	
-/*		MOSCAD_sprintf(msg, " Kliens message length(retval): %d", retval);
-		MOSCAD_message(msg); */
-	
+		
 	/* Received chr */
  	if (retval == 0)
 	{
