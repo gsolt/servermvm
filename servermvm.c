@@ -791,7 +791,7 @@ BOOL				bNMSentAll;
 BOOL				bLostACK;
 BOOL				bTimeOutActive;
 int					nActTrCtr;
-unsigned long		lTick;
+unsigned long		lTickTeszt;
 unsigned long		lTickDC;
 BOOL				bEnableCount;
 BOOL				bEnableCountDC;
@@ -1334,19 +1334,21 @@ long         lTimeFIU;
 /* Végtelen ciklus----------------------------------------------------------------------------------------------------*/         
 for (;;)
 {         
-      MOSCAD_wait(50);
+      MOSCAD_wait(100);
+	
+  	nTableNum1=1;
+    nTableNum2=2;	
+		fnReadPar(); 
   
       
 /*Ha konnektált és jó a dinamikus site tábla --------------------------------------------------------------------------------------------------*/	         
 if (  (newsocket[INDX]>0)  && (p_col_Stat[16] == 0) )
 {	
+MOSCAD_led_off(CB_ACE_LED_ID_USR1);
 
-MOSCAD_wait(100);
+MOSCAD_wait(50);
 
 
-		nTableNum1=1;
-    nTableNum2=2;	
-		fnReadPar(); 
 
 	
 /* fnSendTESTFR_ACT(INDX); */		
@@ -1356,18 +1358,32 @@ MOSCAD_wait(100);
 /*Receive messages --------------------------------------------------------------------*/   
 memset((void *)sBuff, 0, sizeof(sBuff));   
 retval = 0;   
+lTickTeszt=0;
+
 retval = MOSCAD_socket_recv(newsocket[INDX], sBuff, sizeof(sBuff), MOSCAD_SOCKET_MSG_DONTWAIT);
+			MOSCAD_led_set(CB_ACE_LED_ID_USR1, 10, 1, 20);
+MOSCAD_wait(50);
+
+/*if (lTickTeszt>5)
+{
+
+  	 MOSCAD_sprintf(msg, "Socket recv idõ %d, retval: %d", lTickTeszt, retval);
+  	MOSCAD_error(msg); 
+} */
+ 
 if (retval ==ERR_MOSCAD_SOCKET_ERROR)
 {
   retval = MOSCAD_socket_errno();
   if (retval == ERR_MOSCAD_SOCKET_EWOULDBLOCK)
   {
-  	 MOSCAD_sprintf(msg, "1. Connection has been broken error newsocket[0]:%d, newsocket[1]: %d", newsocket[0],newsocket[1]);
-  	MOSCAD_error(msg); 
+  	 /* MOSCAD_sprintf(msg, "1. Connection has been broken error newsocket[0]:%d, newsocket[1]: %d", newsocket[0],newsocket[1]);
+  	MOSCAD_error(msg);  */
 
     MOSCAD_wait(100);
-    continue;
+    /* continue;  */
   }
+  else
+  {
 
 	/* Socket connection has been broken. */
 	MOSCAD_sprintf(msg, "Connection has been broken error %d, INDX: %d", MOSCAD_socket_errno(), INDX);
@@ -1379,7 +1395,7 @@ if (retval ==ERR_MOSCAD_SOCKET_ERROR)
 
 	MOSCAD_sprintf(msg, "Connection has been broken error newsocket[0]:%d, newsocket[1]: %d", newsocket[0],newsocket[1]);
 	MOSCAD_error(msg);
-
+  }
 	
 }
 else
@@ -1427,7 +1443,7 @@ do
 {		
     nCikl++;
     nMessLength = 6;
-/*		MOSCAD_sprintf(msg, " Do cikluson belul: kliens message length: %d, nCikl: %d", retval, nCikl);
+		/* MOSCAD_sprintf(msg, " Do cikluson belul: kliens message length: %d, nCikl: %d", retval, nCikl);
 		MOSCAD_message(msg); */
 
     /*MOSCAD_sprintf(msg, " \n Socket: %d, retval:  %d. sBuff[0] a cikluson belül: %x  %x  %x  %x  %x  %x  %x  %x  %x  %x  %x  %x %x  %x  %x  %x  %x  %x  %x  %x  %x  %x  %x  %x",INDX,  retval,sBuff[0], sBuff[1],sBuff[2],sBuff[3],sBuff[4],sBuff[5],sBuff[6],sBuff[7],sBuff[8],sBuff[9],sBuff[10],sBuff[11],sBuff[12], sBuff[13],sBuff[14],sBuff[15],sBuff[16],sBuff[17],sBuff[18],sBuff[19],sBuff[20],sBuff[21],sBuff[22],sBuff[23]);
@@ -1588,17 +1604,6 @@ do
 					/* Single command --------------------------------------------------------------------*/
 					if ( nTypeID ==TI_C_SC_NA_1 && nCauseOfTx== COT_ACT)
 						{
-							 /*	nCommand_SE[INDX] = sBuff[1 + 1 + 4 + 4 + 2 + 3 ] & 0x80;;
-							
-						
-							nNum = fnBuildStartChar(sBuffTx, START_CHAR,0);
-							nNum = fnAPCISeqNums(sBuffTx, nSendSeqNum[INDX],nRecSeqNum[INDX],S_FORMAT, nNum+1);							
-							fnBuildMessLength(sBuffTx, nNum-2,1);
-														
-							
-							retval2 = MOSCAD_socket_send(newsocket[INDX], sBuffTx, nNum,0);
-               MOSCAD_wait(100);		
-                 */
 			       	
 							nMessLength = 16;
 							
@@ -1877,7 +1882,7 @@ do
     retval = 0;
   }		
   
- /*MOSCAD_wait(100); */
+
 }	
 while (retval > 0 && nCikl<10 );
 		
@@ -1907,6 +1912,12 @@ while (retval > 0 && nCikl<10 );
 /* Ha már feldolgozta a bejövõ táviratokat */
 
 
+/* if (lTickTeszt>5)
+{
+
+  	 MOSCAD_sprintf(msg, "Bejövõ táviratok feld. idõ %d", lTickTeszt);
+  	MOSCAD_error(msg); 
+}  */
 
 
 
@@ -2578,6 +2589,12 @@ if (nClockSyncStep[INDX] == 1)  /* Activation confirmation */
 
 
 			  
+/* if (lTickTeszt>6)
+{
+
+  	 MOSCAD_sprintf(msg, "Van küldendõ távirat idõ %d, nASDUWrPtr[INDX]: %d,nASDUSendPtr[INDX]: %d", lTickTeszt,nASDUWrPtr[INDX],nASDUSendPtr[INDX]);
+  	MOSCAD_error(msg); 
+}  */
 			  
         
 
@@ -2601,6 +2618,15 @@ if (nClockSyncStep[INDX] == 1)  /* Activation confirmation */
 					/* távirat elküldése*/
 					nRetVal = MOSCAD_socket_send(newsocket[INDX], strASDU[INDX][nASDUSendPtr[INDX]].sBuff, strASDU[INDX][nASDUSendPtr[INDX]].nLength,0);	
 					nASDUSendPtr[INDX]++;
+
+/*if (lTickTeszt>6)
+{
+
+  	 MOSCAD_sprintf(msg, "El van küldve a  távirat idõ %d", lTickTeszt);
+  	MOSCAD_error(msg); 
+} */
+			  
+ 
 					
 					/* 2014.12.11. */
 					if (nSendSeqNum[INDX]< 32767)
@@ -2696,12 +2722,13 @@ void fnTaskSpont(void)
    {
 
 
-    MOSCAD_wait(1000);
+    MOSCAD_wait(10);
+    lTickTeszt++;
 
 
-		nTableNum1=1;
+/*		nTableNum1=1;
     nTableNum2=2;	
-		fnReadPar(); 
+		fnReadPar();  */
 
 
     }
@@ -3042,7 +3069,7 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
 
  
  
-         if (MOSCAD_run_task(CB_TaskD, fnTaskCreateSocket, NULL) !=0 )
+         if (MOSCAD_run_task(CB_TaskB, fnTaskCreateSocket, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTasCreateSocket");
          }
@@ -3052,7 +3079,7 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
             MOSCAD_error("Can't run fnTaskServer0");
          }
         
-         if (MOSCAD_run_task(CB_TaskB, fnTaskServer1, NULL) !=0 )
+         if (MOSCAD_run_task(CB_TaskD, fnTaskServer1, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskServer1");
          }  
