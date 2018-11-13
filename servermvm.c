@@ -437,19 +437,6 @@ void fnSocketInit(int INDX);
 
 void fnIEC_Init(void);
 
-/* main_iec.c*/
-/*extern void fnWriteNM( int nIECOffset,unsigned int nData);
-extern void fnNMTblIndx(int nIECOffset, int *nNMTblIndx, int *nIndx);
-extern void fnDPTblIndx(int nIECOffset, int *nDPTblIndx, int *nIndx);
-extern void fnWriteSPData(int nIEC_Offset, int nData, int nMS1, int nMS2, int nMin, int nCTAct);
-extern int fnReadSPData(int nIEC_Offset);
-extern void fnDCTblIndx(int nIECOffset, int *nDCTblIndx, int *nOffset, short **p_col_DCAct);
-extern void fnSCTblIndx(int nIECOffset, int *nSCTblIndx, int *nOffset, short **p_col_SCAct);
-extern void fnReadSPData2(int nIEC_Offset, unsigned char *byData);
-extern void fnReadSPDataTime(int nIEC_Offset, unsigned char *nData,  int *nMS1, int *nMS2, int *nMin, int *bTTime, int *nXOR);
-extern void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus);
-extern void fnReadDPDataTime(int nIEC_Offset, BYTE *byDP,  int *nMS1, int *nMS2, int *nMin, int *bTTime);
-*/
 void fnStart(void);
 void IEC_DRV(unsigned short TableNumber1, unsigned short TableNumber2);
 void fnIEC_Init(void);
@@ -493,6 +480,8 @@ void fnResetSRAM(void);
 void fnGetIntData(int nTableNum);
 void fnSavePARData(int nTableNum);
 void fnSendTESTFR_ACT(int INDX);
+void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear);
+void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth);
 
 
 
@@ -1300,7 +1289,8 @@ int					nDataNum;
 IEC_DUI_104		duiTransmit;
 long         lTimeRTU;
 long         lTimeFIU;
-
+int           n10sec;
+int           nSec;
 
 
 /* Inicializálás */
@@ -1888,13 +1878,16 @@ while (retval > 0 && nCikl<10 );
 
 		MOSCAD_get_datetime(&mdt);
 		
+ 		n10sec = mdt.seconds/7;
+    nSec = mdt.seconds - n10sec *7 + mdt.minutes/21; 
+
 		
 		if (mdt.seconds>nOldSec || mdt.seconds <=1 )
 		{
 			n20Msec = 0;
 		}
 		
-		nMsec = 1000 * mdt.seconds + mdt.minutes + lMsec;
+		nMsec = 1000 * mdt.seconds  + lMsec + nSec ;
 		
 		nOldSec = mdt.seconds;
 		
@@ -1939,9 +1932,12 @@ if (nSPWrPtr[INDX]==0)
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMs[1] 			= nMsec / 256;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMin			= mdt.minutes;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byHour			= mdt.hours;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
+				strSPEventWT[INDX][nSPTempPtr].sTime.byDayMonth_Week	= mdt.date ;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMon			= mdt.month;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byYear			= mdt.year;
+
+        /* Hogy jobban lehessen monitorozni */
+        fnWriteSPTime(nI, lMsec + nSec , mdt.seconds, mdt.minutes, mdt.hours, mdt.date , mdt.month, mdt.year);
 			
 			
 			nSPTempPtr++;
@@ -1992,6 +1988,7 @@ if (nDPWrPtr[INDX]==0)
 	{
 		
 	fnReadDPDataTime(nI, &byDP[nI], &nMS1, &nMS2, &nMin, &bTTime);				
+
 			
 		if ( byDP[nI] != byPrDP[INDX][nI] ) 
 		{					
@@ -2008,6 +2005,8 @@ if (nDPWrPtr[INDX]==0)
 				strDPEventWT[INDX][nDPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byMon			= mdt.month;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byYear			= mdt.year;
+
+        fnWriteDPTime(nI, lMsec + nSec, mdt.seconds, mdt.minutes, mdt.hours, mdt.date , mdt.month);
 								
 			nDPTempPtr++;	
 			
@@ -2602,7 +2601,6 @@ MOSCAD_DATE_TM  mdt;
 
 		MOSCAD_get_datetime(&mdt);
 		
-		
 		if (mdt.seconds>lOldSec || mdt.seconds <=1 )
 		{
 			lMsec = 0;
@@ -2657,7 +2655,7 @@ void fnSocketInit(int INDX)
 /* cprog2.c függvényei				   										*/
 /****************************************************************************/
 /****************************************************************************/
-/* Kiolvas egy adatot a SP adatok kozul, a VALID/INVALID statuszt figyelembe veve 	*/
+/* Kiolvas egy adatot a SP adatok kozul, a VALID/INVALID statuszt NEM figyelembe veve 	*/
 /*																			*/
 /****************************************************************************/
 void fnReadSPDataTime(int nIEC_Offset, unsigned char *byData,  int *nMS1, int *nMS2, int *nMin, int *bTTime, int *nXOR)
@@ -2707,7 +2705,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 						nInvalid = 64;
 					}
 				
-				*byData  = p_col_SPAct[nIndx] + nInvalid;	
+				*byData  = p_col_SPAct[nIndx] ;	
 				
 			/*	*byData  = p_col_SPAct[nIndx];*/
 				
@@ -2718,7 +2716,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 
 
 /****************************************************************************/
-/* Kiolvas egy adatot a DP adatok kozul, ido adattal, a VALID/INVALID statuszt figyelembe veve	*/
+/* Kiolvas egy adatot a DP adatok kozul, ido adattal, a VALID/INVALID statuszt NEM figyelembe veve	*/
 /*																			*/
 /****************************************************************************/
 void fnReadDPDataTime(int nIEC_Offset, BYTE *byDP,  int *nMS1, int *nMS2, int *nMin, int *bTTime)
@@ -2767,7 +2765,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 					}
 					
 				
-			*byDP = ((BYTE)p_col_DPLAct[nIndx] | ((BYTE)p_col_DPHAct[nIndx] * 2)) + nInvalid;
+			*byDP = ((BYTE)p_col_DPLAct[nIndx] | ((BYTE)p_col_DPHAct[nIndx] * 2)) ;
 
 
 
@@ -2775,7 +2773,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 
 
 /****************************************************************************/
-/* Kiolvas egy adatot a SP adatok kozul, a VALID/INVALID statuszt figyelembe veve */
+/* Kiolvas egy adatot a SP adatok kozul, a VALID/INVALID statuszt NEM figyelembe veve */
 /*																			*/
 /****************************************************************************/
 void fnReadSPData2(int nIEC_Offset, unsigned char *byData)
@@ -2809,7 +2807,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 					}
 
 				   	
-				   	*byData  		= p_col_SPAct[nIndx] + nInvalid;
+				   	*byData  		= p_col_SPAct[nIndx];
 				   	
 
 
@@ -3680,20 +3678,7 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 			
 				fnReadDPDataTime(nI+nOffset, &byDPVal, &nMS1, &nMS2, &nMin, &bTTime);	
 				buf[nNum+3+nI] = byDPVal;
-			
-/*			if (nSendDP[INDX] < 250 )
-			{			
-				buf[nNum+3+nI] = (BYTE)p_col_DPL[nI+nOffset] | (BYTE)p_col_DPH[nI+nOffset] * 2 ;			
-			}
-			else if (nSendDP[INDX] >= 250 && nSendDP[INDX] < 500 )
-			{
-				buf[nNum+3+nI] = (BYTE)p_col_DP2L[nI+nOffset-250] | (BYTE)p_col_DP2H[nI+nOffset-250] * 2 ;
-			}
-			else if (nSendDP[INDX] >= 500 && nSendDP[INDX] < 750 )
-			{
-				buf[nNum+3+nI] = (BYTE)p_col_DP3L[nI+nOffset-500] | (BYTE)p_col_DP3H[nI+nOffset-500] * 2 ;
-			}*/
-			
+						
 		}
 		
 	return (nNum + 3 + duiTransmit.byDataNum);	
@@ -4833,6 +4818,101 @@ void fnDisconnect(int INDX)
 
 
 
+/****************************************************************************/
+/* Beírja az idõt az SP adatok kozé                                        	*/
+/*																			*/
+/****************************************************************************/
+void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear)
+{
+short          *p_col_SPAct;
+short          *p_col_SP_CTAct;
+short          *p_col_SP_MS1Act;
+short          *p_col_SP_MS2Act;
+short          *p_col_SP_MINAct;
+short          *p_col_SP_XORAct;
+short          *p_col_SP_STATUS;
 
+
+int				nIndx;
+int				nTblIndx;
+int				nStatus;
+
+int				nInvalid;
+
+nTblIndx = nIEC_Offset/250;
+nIndx    = nIEC_Offset - nTblIndx *250;
+						
+					/*Elõállítja a tábla indexet, és offstet */	
+					/*fnSPTblIndx(nIEC_Offset, &nSPTblIndx, &nIndx);*/
+						
+   					
+				   	p_col_SPAct     = sSPT[nTblIndx].p_col_SP;
+				   	p_col_SP_MS1Act = sSPT[nTblIndx].p_col_SP_MS1;
+				   	p_col_SP_MS2Act = sSPT[nTblIndx].p_col_SP_MS2;
+				   	p_col_SP_MINAct = sSPT[nTblIndx].p_col_SP_MIN;				   
+				   	p_col_SP_CTAct  = sSPT[nTblIndx].p_col_SP_CT; 	
+				   	p_col_SP_XORAct = sSPT[nTblIndx].p_col_SP_XOR; 	
+				   	p_col_SP_STATUS = sSPT[nTblIndx].p_col_SP_STATUS;	
+
+					
+					p_col_SP_MS1Act[nIndx] = nMS1;
+					p_col_SP_MS2Act[nIndx] = nMS2;
+					p_col_SP_MINAct[nIndx] = nMin;					
+					p_col_SP_CTAct[nIndx] = nHour;
+					p_col_SP_XORAct[nIndx] = nDay;
+					p_col_SP_STATUS[nIndx] = nMonth;
+					
+
+
+
+} /* end fnWriteSPTime()*/
+
+
+/****************************************************************************/
+/* Kiolvas egy adatot a DP adatok kozul, ido adattal, a VALID/INVALID statuszt figyelembe veve	*/
+/*																			*/
+/****************************************************************************/
+void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth)
+{
+short          *p_col_DPLAct;
+short          *p_col_DPHAct;
+short          *p_col_DP_CTAct;
+short          *p_col_DP_MS1Act;
+short          *p_col_DP_MS2Act;
+short          *p_col_DP_MINAct;
+
+short          *p_col_DP_STATUS;
+
+int				nIndx;
+int				nTblIndx;
+int				nStatus;
+int				nInvalid;
+
+nTblIndx = nIEC_Offset/250;
+nIndx    = nIEC_Offset - nTblIndx *250;
+						
+					/*Elõállítja a tábla indexet, és offstet */	
+					/*fnSPTblIndx(nIEC_Offset, &nSPTblIndx, &nIndx);*/
+						
+   					
+				   	p_col_DPLAct    = sDPT[nTblIndx].p_col_DPL;
+				   	p_col_DPHAct    = sDPT[nTblIndx].p_col_DPH;
+				   	p_col_DP_MS1Act = sDPT[nTblIndx].p_col_DP_MS1;
+				   	p_col_DP_MS2Act = sDPT[nTblIndx].p_col_DP_MS2;
+				   	p_col_DP_MINAct = sDPT[nTblIndx].p_col_DP_MIN;				   
+				   	p_col_DP_CTAct  = sDPT[nTblIndx].p_col_DP_CT; 	
+				   	p_col_DP_STATUS = sDPT[nTblIndx].p_col_DP_STATUS; 	
+
+					
+					p_col_DP_MS1Act[nIndx] = nMS1;
+					p_col_DP_MS2Act[nIndx] = nMS2;
+					p_col_DP_MINAct[nIndx] = nMin;					
+					p_col_DP_CTAct[nIndx] = nHour;					
+					p_col_DP_STATUS[nIndx] = nDay;
+					
+
+
+
+} /* end fnWriteDPTime()*/
 
 
