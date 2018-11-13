@@ -540,6 +540,7 @@ unsigned int	nStarted[MAX_CONN];
 
 
 MOSCAD_SOCKET 		sock;
+unsigned long   lMsec;                      /* Msec érték egy másodpercen belül */              
 
 /* ######################################################################################################################################################################### */
 /* 2012.05.19  - Egy klienshez tartozó összes adat struktúrája ----------------------------------------------------------------*/
@@ -835,6 +836,7 @@ unsigned int		nIECErr;
 int					nMessReceived;
 int					n20Msec;
 int					nOldSec;
+unsigned long lOldSec = 0;  
 
 
 strTotalData		*TotalData;
@@ -1203,25 +1205,9 @@ else
 			}
 		} /*end if */  
          
-         
-         
-         
-         
-         
-         
-   } /* end for(;;) */
-         
-         
-         
-         
+   } /* end for(;;) */         
 }/*end  fnTaskInit(void)*/
-/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-         
-         
-         
-         
-         
-         
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/       
          
 /*--------------------------------------------------------------------------*/
 /* Server0 task                                                                */
@@ -1894,43 +1880,11 @@ while (retval > 0 && nCikl<10 );
 } /* end else  if (retval ==ERR_MOSCAD_SOCKET_ERROR) */
 
 
-			
-		
-		
-					
-			/*fnSpontTest(0);*/
-			
-			
-/*					MOSCAD_sprintf(message,"Direct nDisableWrite: %d", nDisableWrite );			
-					MOSCAD_message(message ); */
-
 /* ====================================================================================================================================================== */			   
-/*			  fnEvents(duiRec);  */
-
-
-
-/* Ha már feldolgozta a bejövõ táviratokat */
-
-
-/* if (lTickTeszt>5)
-{
-
-  	 MOSCAD_sprintf(msg, "Bejövõ táviratok feld. idõ %d", lTickTeszt);
-  	MOSCAD_error(msg); 
-}  */
-
-
 
 
 	lTickEv = 0;
 	
-			
-						
-		/*if (nDelayedStart == 0)
-		{
-			return;
-		}*/
-
 
 		MOSCAD_get_datetime(&mdt);
 		
@@ -1940,7 +1894,7 @@ while (retval > 0 && nCikl<10 );
 			n20Msec = 0;
 		}
 		
-		nMsec = 1000 * mdt.seconds + mdt.minutes + mdt.seconds + mdt.hours;
+		nMsec = 1000 * mdt.seconds + mdt.minutes + lMsec;
 		
 		nOldSec = mdt.seconds;
 		
@@ -1963,59 +1917,24 @@ if (nSPWrPtr[INDX]==0)
 {
 		nSPTempPtr = 0;
 
-/*		MOSCAD_sprintf(message,"IECDRV104: fnEvents running..., newsocket[0]: %d, nStarted[0]: %d, nSPWrPtr[INDX]: %d, nSPReadPtr[INDX]: %d, nSPTempPtr: %d, nSPNum: %d",newsocket[0],nStarted[0], nSPWrPtr[INDX], nSPReadPtr[INDX],nSPTempPtr,nSPNum );			
-		MOSCAD_message(message );            */
-
-
-
 	for (nI=0;nI<nSPNum && nI<MAX_SP_NUM && (nSPTempPtr < MAX_SP_EVNUM) ;nI++)
 	{	
 	
 				
-	fnReadSPData2(nI, &bySP[nI]);
+  	fnReadSPData2(nI, &bySP[nI]);
 	
 		/* Ha van SP event */
 		if ( bySP[nI] != byPrSP[INDX][nI] ) 
 		{			
-			
-			
-				/* MOSCAD_sprintf(message, " New SP event, offset: %d, value: %d", nI,bySP[nI] );
-				MOSCAD_message(message);
-		
-		MOSCAD_sprintf(message,"IECDRV2: fnEvents running..., newsocket[0]: %d, nStarted[0]: %d, nSPWrPtr[INDX]: %d, nSPReadPtr[INDX]: %d, nSPTempPtr: %d",newsocket[0],nStarted[0], nSPWrPtr[INDX], nSPReadPtr[INDX],nSPTempPtr );			
-		MOSCAD_message(message );       */
-		
-
-			
-			fnReadSPDataTime(nI,&bySP[nI], &nMS1, &nMS2, &nMin, &bTTime, &nXOR);
+						
+			/* fnReadSPDataTime(nI,&bySP[nI], &nMS1, &nMS2, &nMin, &bTTime, &nXOR); */
 			
 			/* Information object address beirasa */
 			fnBuildIOA(&strSPEventWT[INDX][nSPTempPtr].byIOA[0], lSPStart+nI);
 			/* SP data beirasa*/
 			strSPEventWT[INDX][nSPTempPtr].bySP = bySP[nI];
-			/* Msec es perc beirasa */
-			/* Van kivulrol kapott ido */
-			bDevTime = bTTime;
-			
-      lTimeFIU = mdt.minutes * 60000 + nMsec;
-      lTimeRTU = nMin * 60000 + nMS2 * 256 + nMS1;
-      
-      
-			
-
-			
-			if ((bDevTime == 0) || (lTimeFIU-lTimeRTU > 120000) ||  (nMin > mdt.minutes)  )
-			{
-      
-        if (bDevTime == 1)
-         {
- 			   MOSCAD_sprintf(message," lTimeFIU : %d,  lTimeRTU: %d, mdt.minutes: %d, nMsec: %d, nMin: %d, nMS2: %d, nMS1: %d ", lTimeFIU, lTimeRTU, mdt.minutes, nMsec, nMin, nMS2, nMS1 );			
-			   MOSCAD_message(message );            
-         }
-				
-				/*strSPEventWT[INDX][nSPTempPtr].byTime[1] = nMsec / 256;
-				strSPEventWT[INDX][nSPTempPtr].byTime[0] = nMsec - (nMsec / 256) * 256;
-				strSPEventWT[INDX][nSPTempPtr].byTime[2] = mdt.minutes;*/
+			/* CP56Time2a idõ formátum beirasa */			
+			   						
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMs[0] 			= nMsec - (nMsec / 256) * 256;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMs[1] 			= nMsec / 256;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMin			= mdt.minutes;
@@ -2023,21 +1942,7 @@ if (nSPWrPtr[INDX]==0)
 				strSPEventWT[INDX][nSPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byMon			= mdt.month;
 				strSPEventWT[INDX][nSPTempPtr].sTime.byYear			= mdt.year;
-			}
-			else 
-			{
-				/*strSPEventWT[INDX][nSPTempPtr].byTime[0] = nMS1;
-				strSPEventWT[INDX][nSPTempPtr].byTime[1] = nMS2;
-				strSPEventWT[INDX][nSPTempPtr].byTime[2] = nMin;*/	
-				
-				strSPEventWT[INDX][nSPTempPtr].sTime.byMs[0] 			= nMS1 + nMin* 3 + mdt.hours * 2;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byMs[1] 			= nMS2;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byMin			= nMin;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byHour			= mdt.hours;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byMon			= mdt.month;
-				strSPEventWT[INDX][nSPTempPtr].sTime.byYear			= mdt.year;							
-			}
+			
 			
 			nSPTempPtr++;
 			byPrSP[INDX][nI] = bySP[nI];
@@ -2094,21 +1999,7 @@ if (nDPWrPtr[INDX]==0)
 			fnBuildIOA(&strDPEventWT[INDX][nDPTempPtr].byIOA[0], lDPStart+nI);
 			/* DP data beirasa*/
 			strDPEventWT[INDX][nDPTempPtr].byDP = byDP[nI];
-			
-			bDevTime = bTTime;
-							
-      lTimeFIU = mdt.minutes * 60000 + nMsec;
-      lTimeRTU = nMin * 60000 + nMS2 * 256 + nMS1;
-              
-              
-			if ((bDevTime == 0) || (lTimeFIU-lTimeRTU > 120000) ||  (nMin > mdt.minutes)  )
-			{
-         if (bDevTime == 1)
-         {
- 			   MOSCAD_sprintf(message," lTimeFIU : %d,  lTimeRTU: %d, mdt.minutes: %d, nMsec: %d, nMin: %d, nMS2: %d, nMS1: %d ", lTimeFIU, lTimeRTU, mdt.minutes, nMsec, nMin, nMS2, nMS1 );			
-			   MOSCAD_message(message );            
-         }
-
+			              
 				/* Msec es perc beirasa */
 				strDPEventWT[INDX][nDPTempPtr].sTime.byMs[0] 			= nMsec - (nMsec / 256) * 256;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byMs[1]			= nMsec / 256;
@@ -2117,20 +2008,7 @@ if (nDPWrPtr[INDX]==0)
 				strDPEventWT[INDX][nDPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byMon			= mdt.month;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byYear			= mdt.year;
-						
-			}
-			else
-			{
-								/* Msec es perc beirasa */
-				strDPEventWT[INDX][nDPTempPtr].sTime.byMs[0]			= nMS1;
-				strDPEventWT[INDX][nDPTempPtr].sTime.byMs[1]			= nMS2;
-				strDPEventWT[INDX][nDPTempPtr].sTime.byMin			= nMin;			
-				strDPEventWT[INDX][nDPTempPtr].sTime.byHour			= mdt.hours;
-				strDPEventWT[INDX][nDPTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
-				strDPEventWT[INDX][nDPTempPtr].sTime.byMon			= mdt.month;
-				strDPEventWT[INDX][nDPTempPtr].sTime.byYear			= mdt.year;
-			}
-		
+								
 			nDPTempPtr++;	
 			
 			byPrDP[INDX][nI] = byDP[nI];
@@ -2710,6 +2588,7 @@ int fnAPCISeqNums(BYTE *buf, unsigned int nSendSeqNum,unsigned int nRecSeqNum,in
 /****************************************************************************/
 void fnTaskSpont(void)
 {
+MOSCAD_DATE_TM  mdt;
 
 
 	MOSCAD_sprintf(message, "TaskSpont created succesfully");
@@ -2721,9 +2600,20 @@ void fnTaskSpont(void)
    for(;;)
    {
 
+		MOSCAD_get_datetime(&mdt);
+		
+		
+		if (mdt.seconds>lOldSec || mdt.seconds <=1 )
+		{
+			lMsec = 0;
+		}
+		
+		lOldSec = mdt.seconds;
+
 
     MOSCAD_wait(10);
     lTickTeszt++;
+    lMsec = lMsec+10;
 
 
 /*		nTableNum1=1;
@@ -3170,86 +3060,6 @@ if ((nStart == 0) )
 	p_col_Stat = (short *)(table_Stat.ColDataPtr[0]);				
 
 	 		
-	/* Double point */
-/*	nDPTblIndx = p_col_parInt[13];	
-	if (MOSCAD_get_table_info (nDPTblIndx,&table_DP)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nDPTblIndx);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_DPL = (short *)(table_DP.ColDataPtr[1]);
-	p_col_DPH = (short *)(table_DP.ColDataPtr[0]);
-	p_col_DP_MS1 = (short *)(table_DP.ColDataPtr[2]);
-	p_col_DP_MS2 = (short *)(table_DP.ColDataPtr[3]);
-	p_col_DP_MIN = (short *)(table_DP.ColDataPtr[4]);
-	p_col_DP_CT  = (short *)(table_DP.ColDataPtr[5]);
-*/
-	/* Double point2 */
-/*	nDPTblIndx2 = p_col_parInt[43];	
-	if (MOSCAD_get_table_info (nDPTblIndx2,&table_DP2)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nDPTblIndx2);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_DP2L = (short *)(table_DP2.ColDataPtr[1]);
-	p_col_DP2H = (short *)(table_DP2.ColDataPtr[0]);
-	p_col_DP2_MS1 = (short *)(table_DP2.ColDataPtr[2]);
-	p_col_DP2_MS2 = (short *)(table_DP2.ColDataPtr[3]);
-	p_col_DP2_MIN = (short *)(table_DP2.ColDataPtr[4]);
-	p_col_DP2_CT  = (short *)(table_DP2.ColDataPtr[5]);
-*/
-	/* Double point3 */
-/*	nDPTblIndx3 = p_col_parInt[55];	
-	if (MOSCAD_get_table_info (nDPTblIndx3,&table_DP3)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nDPTblIndx3);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_DP3L = (short *)(table_DP3.ColDataPtr[1]);
-	p_col_DP3H = (short *)(table_DP3.ColDataPtr[0]);
-	p_col_DP3_MS1 = (short *)(table_DP3.ColDataPtr[2]);
-	p_col_DP3_MS2 = (short *)(table_DP3.ColDataPtr[3]);
-	p_col_DP3_MIN = (short *)(table_DP3.ColDataPtr[4]);
-	p_col_DP3_CT  = (short *)(table_DP3.ColDataPtr[5]);
-*/ 			
-	/* Normalt mert ertek */		
-/*	nNMTblIndx = p_col_parInt[18];	
-	if (MOSCAD_get_table_info (nNMTblIndx,&table_NM)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nNMTblIndx);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_NM    = (short *)(table_NM.ColDataPtr[0]);
-	p_col_NM_LZ = (short *)(table_NM.ColDataPtr[1]);
-	p_col_NM_Tx = (short *)(table_NM.ColDataPtr[2]);*/
-
-	/* Normalt mert ertek 2.*/		
-/*	nNMTblIndx2 = p_col_parInt[44];	
-	if (MOSCAD_get_table_info (nNMTblIndx2,&table_NM2)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nNMTblIndx2);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_NM2    = (short *)(table_NM2.ColDataPtr[0]);
-	p_col_NM2_LZ = (short *)(table_NM2.ColDataPtr[1]);
-	p_col_NM2_Tx = (short *)(table_NM2.ColDataPtr[2]);*/
-	
-	/* Normalt mert ertek 3.*/		
-/*	nNMTblIndx3 = p_col_parInt[56];	
-	if (MOSCAD_get_table_info (nNMTblIndx3,&table_NM3)!=0 )
-   		{
-        MOSCAD_sprintf(message,"No valid information in table: %d",nNMTblIndx3);
-        MOSCAD_error(message );
-        return;
-   		}
-	p_col_NM3    = (short *)(table_NM3.ColDataPtr[0]);
-	p_col_NM3_LZ = (short *)(table_NM3.ColDataPtr[1]);
-	p_col_NM3_Tx = (short *)(table_NM3.ColDataPtr[2]);*/
 
         MOSCAD_sprintf(message,"=====================fnReadPar step1");
         MOSCAD_error(message );
