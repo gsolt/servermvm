@@ -435,7 +435,7 @@ void fnDisconnect(int INDX);
 
 void fnSocketInit(int INDX);
 
-void fnIEC_Init(void);
+
 
 void fnStart(void);
 void IEC_DRV(unsigned short TableNumber1, unsigned short TableNumber2);
@@ -906,13 +906,14 @@ void user_control_function(int control)
          /* 2015.04.15 */
         /* MOSCAD_wait(3500); */
 
+
    			nTableNum1=1;
             nTableNum2=2;	
 		    fnReadPar();
 
 
    			fnIEC_Init();
-   			 
+			 
 
 
          break;
@@ -2006,6 +2007,7 @@ if (nDPWrPtr[INDX]==0)
 				strDPEventWT[INDX][nDPTempPtr].sTime.byMon			= mdt.month;
 				strDPEventWT[INDX][nDPTempPtr].sTime.byYear			= mdt.year;
 
+        /* Hogy jobban lehessen monitorozni */
         fnWriteDPTime(nI, lMsec + nSec, mdt.seconds, mdt.minutes, mdt.hours, mdt.date , mdt.month);
 								
 			nDPTempPtr++;	
@@ -2593,13 +2595,15 @@ MOSCAD_DATE_TM  mdt;
 	MOSCAD_sprintf(message, "TaskSpont created succesfully");
 	MOSCAD_message(message);
 
-  MOSCAD_wait(100);
+  MOSCAD_wait(200);
 
 
    for(;;)
    {
 
-		MOSCAD_get_datetime(&mdt);
+      MOSCAD_wait(10);
+
+		 MOSCAD_get_datetime(&mdt);  
 		
 		if (mdt.seconds>lOldSec || mdt.seconds <=1 )
 		{
@@ -2609,7 +2613,7 @@ MOSCAD_DATE_TM  mdt;
 		lOldSec = mdt.seconds;
 
 
-    MOSCAD_wait(10);
+
     lTickTeszt++;
     lMsec = lMsec+10;
 
@@ -2814,7 +2818,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 } /* end fnReadSPData2()*/
 
 /****************************************************************************/
-/* Kiolvas egy adatot az NM adatok kozul, a VALID/INVALID statuszt figyelembe veve	*/
+/* Kiolvas egy adatot az NM adatok kozul, a VALID/INVALID statuszt NEM  figyelembe veve	*/
 /*																			*/
 /****************************************************************************/
 void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus)
@@ -2845,14 +2849,16 @@ nIndx    = nIEC_Offset - nTblIndx *240;
 				   	*nLiveZero		= p_col_NM_LZ_Act[nIndx];
 				   	/* *nStatus		= p_col_NM_STATUS[nIndx];*/
 				   	
-				   	if (p_col_NM_STATUS[nIndx] == 0)
+            *nStatus = 0;
+            
+				   	/*if (p_col_NM_STATUS[nIndx] == 0)
 				   	{
 				   		*nStatus = 1;
 				   	}
 				   	else
 				   	{
 				   		*nStatus = 0;
-				   	}
+				   	} */
 				   	
 
 
@@ -2927,10 +2933,10 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
  
  
       	     MOSCAD_largest_available_free_mem(&lLargest);
-	   		 MOSCAD_sprintf(message,"2015.09.21 IEC104 server  program. Ver1.9: Largest available free memory: %ld",lLargest);
+	   		 MOSCAD_sprintf(message,"2018.11.21 IEC104 MVM server  program. Ver1.0: Largest available free memory: %ld",lLargest);
    			 MOSCAD_message(message );
 
-         p_col_Stat[25] = 19;  /* Version 1.9  2015.09.21. */
+         p_col_Stat[25] = 1;  /* Version 1.9  2015.09.21. */
 
 
  			lSRAMLength=MOSCAD_bspSRamLength();   
@@ -2953,28 +2959,28 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
         }        
         
 
+ MOSCAD_wait(500);
 
 
  
- 
-         if (MOSCAD_run_task(CB_TaskB, fnTaskCreateSocket, NULL) !=0 )
+         if (MOSCAD_run_task(CB_TaskL, fnTaskCreateSocket, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTasCreateSocket");
          }
          
-         if (MOSCAD_run_task(CB_TaskC, fnTaskServer0, NULL) !=0 )
+       if (MOSCAD_run_task(CB_TaskM, fnTaskServer0, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskServer0");
          }
         
-         if (MOSCAD_run_task(CB_TaskD, fnTaskServer1, NULL) !=0 )
+         if (MOSCAD_run_task(CB_TaskM, fnTaskServer1, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskServer1");
          }  
         
-         if (MOSCAD_run_task(CB_TaskA, fnTaskSpont, NULL) !=0 )
+         if (MOSCAD_run_task(CB_TaskK, fnTaskSpont, NULL) !=0 )
          {
-            MOSCAD_error("Can't run fnTaskSpont"); /* 2014.01.21. GZS : csak az fnReadPar() miatt */ 
+            MOSCAD_error("Can't run fnTaskSpont"); 
          } 
 
 
@@ -3178,7 +3184,7 @@ if ((nStart == 0) )
    
    	if (MOSCAD_get_table_info (nTableNum2,&table_parInt)!=0 )
    		{
-        MOSCAD_sprintf(message,"14. No valid information in table: %d",2);
+        MOSCAD_sprintf(message,"14. No valid information in table: %d",nTableNum2);
         MOSCAD_error(message );
         return;
    		}
@@ -4288,6 +4294,8 @@ void fnEvents(IEC_DUI_104		duiRec, int INDX)
 void fnSaveData(void)
 {
 
+return;
+
 fnSaveSPData(25);
 fnSaveDPData(6);
 fnSaveNMData(6);
@@ -4301,6 +4309,9 @@ fnSavePARData(2);
 void fnGetData(void)
 {
 char			message[300];
+
+return;
+
 
 fnGetSPData(25);
 MOSCAD_wait(350);
