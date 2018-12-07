@@ -108,6 +108,7 @@
 #define TI_M_SP_TB_1        30
 #define TI_M_DP_TB_1        31
 #define TI_M_ME_TD_1        34
+#define TI_M_ME_TF_1        36
 
 
 
@@ -234,6 +235,7 @@ typedef struct
 		BYTE		 		byNM[2];
 		BYTE				byQ;
 	}	IEC_M_ME_NA_1;	
+  
 /* Ketszeres parancs*/
 typedef struct
 	{
@@ -300,8 +302,24 @@ typedef struct
 		BYTE				byQ;
 		IEC_CP56Time2a	sTime;		
 	}	IEC_M_ME_TD_1;	
-/* Ketszeres parancs*/
 
+
+/* Short floating point SQ=0 */
+typedef struct
+	{
+		BYTE 				byIOA[3];
+		BYTE		 		byNM[4];
+		BYTE				byQ;
+	}	IEC_M_ME_NC_1;	  
+  
+/* Short floating point, idõtaggal SQ=0 */
+typedef struct
+	{
+		BYTE 				byIOA[3];
+		BYTE		 		byNM[4];
+		BYTE				byQ;
+		IEC_CP56Time2a	sTime;		    
+	}	IEC_M_ME_TF_1;	  
 
 
 /* End of IEC60870-5-104 ------------------------------------------------------------------------------------------------------------------------*/			
@@ -813,6 +831,7 @@ unsigned int		nLiveZero[MAX_NM_NUM];
 unsigned int		nStatus[MAX_NM_NUM];
 unsigned int		nPrStatus[MAX_NM_NUM];
 
+IEC_M_ME_TF_1		strFMEvent104[MAX_CONN][MAX_NM_EVNUM];
 IEC_M_ME_TD_1		strNMEvent104[MAX_CONN][MAX_NM_EVNUM];
 IEC_M_ME_NA_1		strNMEvent[MAX_CONN][MAX_NM_EVNUM];
 int					nNMWrPtr[MAX_CONN];
@@ -2068,7 +2087,7 @@ if (nNMWrPtr[INDX]==0)
 		{		
 				
 			/* Information object address beirasa */
-			fnBuildIOA(&strNMEvent104[INDX][nNMTempPtr].byIOA[0], lNMStart+nI);
+			fnBuildIOA(&strFMEvent104[INDX][nNMTempPtr].byIOA[0], lNMStart+nI);
 
 			/* NM data beirasa*/
 			/*nLiveZero = p_col_NM_LZ[nI]; */
@@ -2083,7 +2102,7 @@ if (nNMWrPtr[INDX]==0)
 						nInvalid = 64;
 					}
 					
-			strNMEvent104[INDX][nNMTempPtr].byQ = nInvalid;
+			strFMEvent104[INDX][nNMTempPtr].byQ = nInvalid;
 			nPrNM[INDX][nI] = nNM[nI];
 			nPrStatus[nI] = nStatus[nI];
 		
@@ -2103,8 +2122,8 @@ if (nNMWrPtr[INDX]==0)
           /* ASDU összeállítása */				
 					byNum = nNMWrPtr[INDX];	
 					nNum = fnAPCISeqNums(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, 0,0,I_FORMAT, 2); /* csak a hely miatt, nem a véglelges értékek. A kezdõ karakterek helye is ki van hagyva */															
-					nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_NA_1 , 0,byNum , COT_SPONT, 0,nNum,&duiTransmit);
-					nNum = fnBuildInfObj(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, byIOA, (BYTE*)strNMEvent104[INDX], nNum,duiTransmit, INDX);     /* byIOA nincs használva!!! */      
+					nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_TF_1 , 0,byNum , COT_SPONT, 0,nNum,&duiTransmit);
+					nNum = fnBuildInfObj(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, byIOA, (BYTE*)strFMEvent104[INDX], nNum,duiTransmit, INDX);     /* byIOA nincs használva!!! */      
 
           strASDU[INDX][nASDUWrPtr[INDX]].nLength = nNum;       /* 2 + 4 + ASDU hossz */
           
@@ -2293,7 +2312,9 @@ if (nInterrogationStep[INDX] == 2)   /* Send NM values */
 
 			nNum = fnAPCISeqNums(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, 0,0,I_FORMAT, 2); /* csak a hely miatt, nem a véglelges értékek. A kezdõ karakterek helye is ki van hagyva */															
  			fnBuildIOA(byIOA, lNMStart + nSendNM[INDX]);	     			
-			nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_NA_1 , 1,nDataNum , COT_INROGEN,duiRec.byOrigAddr, nNum,&duiTransmit);			
+/*			nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_NA_1 , 1,nDataNum , COT_INROGEN,duiRec.byOrigAddr, nNum,&duiTransmit);*/			
+			nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_NC_1 , 1,nDataNum , COT_INROGEN,duiRec.byOrigAddr, nNum,&duiTransmit);			
+
 			nNum = fnBuildInfObj(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, byIOA, byData, nNum,duiTransmit, INDX);
 
 			
@@ -3606,7 +3627,7 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 		
 	}	/* end activation confirmation of general interrogation */	
 
-	/* Altalanos lekerdezesre feladott NM ertekek */	
+	/* Altalanos lekerdezesre feladott NM ertekek - normalizált érték */	
 	else if (duiTransmit.byTI == TI_M_ME_NA_1 && duiTransmit.byCOT == COT_INROGEN && duiTransmit.bySequence == 0x80)
 	{	
 		byT[0] = byIOA[0]; /*(BYTE)p_col_parInt[20];*/
@@ -3638,33 +3659,51 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 			
 			buf[nNum+nLenIOA+nI*3+2] = nInvalid;			
 
-/*			
-			if (nSendNM[INDX] < 240)	
-			{		
-				nLiveZero = p_col_NM_LZ[nI +nOffset];
-				p_col_NM_Tx[nI] = fnNorm(p_col_NM[nI + nOffset], nLiveZero, &buf[nNum+nLenIOA+nI*3]);
-				buf[nNum+nLenIOA+nI*3+2] = 0;			
-			}
-			else if (nSendNM[INDX] >= 240 && nSendNM[INDX] < 480)	
-			{		
-				nLiveZero = p_col_NM2_LZ[nI +nOffset-240];
-				p_col_NM2_Tx[nI-240+nOffset] = fnNorm(p_col_NM2[nI + nOffset-240], nLiveZero, &buf[nNum+nLenIOA+nI*3]);
-				buf[nNum+nLenIOA+nI*3+2] = 0;			
-			}
-			else if (nSendNM[INDX] >= 480 && nSendNM[INDX] < 720)	
-			{		
-				nLiveZero = p_col_NM3_LZ[nI +nOffset-480];
-				p_col_NM3_Tx[nI-480+nOffset] = fnNorm(p_col_NM3[nI + nOffset-480], nLiveZero, &buf[nNum+nLenIOA+nI*3]);
-				buf[nNum+nLenIOA+nI*3+2] = 0;			
-			}
-*/			
 			
 
 		}
 		
 	return (nNum + 3 + duiTransmit.byDataNum*3);	
 		
-	}	
+	}	/* end else if */
+  
+	/* Altalanos lekerdezesre feladott NM ertekek - short floating point */	
+	else if (duiTransmit.byTI == TI_M_ME_NC_1 && duiTransmit.byCOT == COT_INROGEN && duiTransmit.bySequence == 0x80)
+	{	
+		byT[0] = byIOA[0]; /*(BYTE)p_col_parInt[20];*/
+		byT[1] = byIOA[1]; /*(BYTE)p_col_parInt[21];*/
+		byT[2] = byIOA[2]; /*(BYTE)p_col_parInt[22];*/
+
+		lNMSt = byIOA[0] + 256 * byIOA[1] + 65536 * byIOA[2];
+		nOffset = lNMSt - lNMStart;
+		
+		
+		memcpy(&buf[nNum], &byT[0],nLenIOA);
+		
+		
+			
+
+		
+		for (nI=0;nI<duiTransmit.byDataNum;nI++)
+		{
+			
+			fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus);
+			/* fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]); */
+			
+			nInvalid = 0;
+			if (nIECStatus  == 1)
+					{
+						nInvalid = 64;
+					}
+			nInvalid = 0;
+      buf[nNum+nLenIOA+nI*3+4] = nInvalid;			
+		}
+		
+	return (nNum + 3 + duiTransmit.byDataNum*5);	
+		
+	}	/* end else if */
+
+  
 	/*  Altalanos lekerdezesre feladott DP ertekek*/
 	else if (duiTransmit.byTI == TI_M_DP_NA_1 && duiTransmit.byCOT == COT_INROGEN && duiTransmit.bySequence == 0x80)
 	{
@@ -4926,4 +4965,23 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 
 } /* end fnWriteDPTime()*/
 
+/****************************************************************************/
+/* Short floating point elõállítása												*/
+/* A MOSCAD-bol 0..3200 vagy 0..4000 kozotti erteket var					*/
+/****************************************************************************/
+void fnNorm2(int nBe, int nLiveZero, BYTE *byFloat)
+{
+int				nTemp,nTemp2;
+int				nOffset;
+int				nProp;
 
+
+
+
+
+
+
+
+
+			
+} /* end fnNorm2 */
