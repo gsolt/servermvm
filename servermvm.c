@@ -3916,7 +3916,7 @@ float         fRet;
 	return (nNum + nI * nObjLen);	
 	} /* end NM event */	
 
-	/* Short floating vlue event feladas */	
+	/* Short floating value event with time tag feladas */	
 	else if (duiTransmit.byTI == TI_M_ME_TF_1  && duiTransmit.byCOT == COT_SPONT && duiTransmit.bySequence == 0x00)
 	{			
 		nI  = 0;
@@ -3927,6 +3927,8 @@ float         fRet;
       	{
       		memcpy(&buf[nNum +  nI * nObjLen],&strFMEvent104[INDX][nNMReadPtr[INDX]].byIOA[0],nLenIOA);
       		memcpy(&buf[nNum +  nI * nObjLen + nLenIOA],&strFMEvent104[INDX][nNMReadPtr[INDX]].byNM[0],4);
+
+
       		
    			/*fnLoHi(&byLow, &byHigh, strNMEvent[nNMReadPtr[INDX]].nNM);
       		buf[nNum + nI * nObjLen + nLenIOA + 1] = byLow;
@@ -3934,7 +3936,7 @@ float         fRet;
       		buf[nNum + nI * nObjLen + nLenIOA + 4] = strFMEvent104[INDX][nNMReadPtr[INDX]].byQ;
 
       		/* IEC60870-5-104 szerintt 7 byte-os*/      		
-      		memcpy(&buf[nNum +  nI * nObjLen + nLenIOA + 1],&strFMEvent104[INDX][nNMReadPtr[INDX]].sTime.byMs[0],7);
+      		memcpy(&buf[nNum +  nI * nObjLen + nLenIOA + 5],&strFMEvent104[INDX][nNMReadPtr[INDX]].sTime.byMs[0],7);
 
       					
 			/* Olvaso pointer novelese */	 			
