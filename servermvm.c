@@ -42,7 +42,7 @@
 #define MAX_CONN		2
 /* #define MAX_MESS_NUM	100 */
 
-#define BYTE			unsigned char
+
 #define S_FORMAT		1
 #define I_FORMAT		0
 #define START_CHAR		0x68
@@ -425,7 +425,7 @@ typedef struct			 	{
 
 typedef struct  {
 
-	char			sBuff[400];
+	char			sBuff[600];
 	unsigned int	nLength;
 	unsigned int	nSendNum;
 							} strASDUType;
@@ -505,7 +505,7 @@ void fnSavePARData(int nTableNum);
 void fnSendTESTFR_ACT(int INDX);
 void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear);
 void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth);
-void fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
+float fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
 
 
 
@@ -1321,7 +1321,7 @@ float         M_LO;
 float         M_HI;
 float         n_LO;
 float         n_HI;
-
+float         fRet;
 /* Inicializálás */
 
 
@@ -2094,12 +2094,28 @@ if (nNMWrPtr[INDX]==0)
 		
 		if ( (nNM[nI] > nPrNM[INDX][nI] * (1.04 )) || (nNM[nI] < nPrNM[INDX][nI] * (0.96 )) || nStatus[nI]!=nPrStatus[nI]) 
 		{						
+
+				/* Msec es perc beirasa */
+				strFMEvent104[INDX][nNMTempPtr].sTime.byMs[0] 			= nMsec - (nMsec / 256) * 256;
+				strFMEvent104[INDX][nNMTempPtr].sTime.byMs[1]			= nMsec / 256;
+				strFMEvent104[INDX][nNMTempPtr].sTime.byMin 			= mdt.minutes;	
+				strFMEvent104[INDX][nNMTempPtr].sTime.byHour			= mdt.hours;
+				strFMEvent104[INDX][nNMTempPtr].sTime.byDayMonth_Week	= mdt.date + mdt.wday*64;
+				strFMEvent104[INDX][nNMTempPtr].sTime.byMon			= mdt.month;
+				strFMEvent104[INDX][nNMTempPtr].sTime.byYear			= mdt.year;
+
+
 			/* Information object address beirasa */
 			fnBuildIOA(&strFMEvent104[INDX][nNMTempPtr].byIOA[0], lNMStart+nI);
 
 			/* NM data beirasa*/
 			/*nLiveZero = p_col_NM_LZ[nI]; */
-			fnNorm(nNM[nI], nLiveZero[nI], &strNMEvent104[INDX][nNMTempPtr].byNM[0]);
+			/*fnNorm(nNM[nI], nLiveZero[nI], &strNMEvent104[INDX][nNMTempPtr].byNM[0]); */
+      fRet = fnNorm2(nNM[nI], M_LO, M_HI, n_LO, n_HI,  &strFMEvent104[INDX][nNMTempPtr].byNM[0]) ;
+
+       MOSCAD_sprintf(message,"Változás: nNM[nI]: %d, fValue: %f,  by0: %d, by1: %d,by2: %d,by3: %d",nNM[nI], fRet,strFMEvent104[INDX][nNMTempPtr].byNM[0],strFMEvent104[INDX][nNMTempPtr].byNM[1],strFMEvent104[INDX][nNMTempPtr].byNM[2],strFMEvent104[INDX][nNMTempPtr].byNM[3]);
+        MOSCAD_message(message ); 
+
 			
 			/*nTemp = byTemp[0] + byTemp[1]*256;
 			strNMEvent[nNMWrPtr[INDX]].nNM = nTemp;*/
@@ -2113,6 +2129,8 @@ if (nNMWrPtr[INDX]==0)
 			strFMEvent104[INDX][nNMTempPtr].byQ = nInvalid;
 			nPrNM[INDX][nI] = nNM[nI];
 			nPrStatus[nI] = nStatus[nI];
+
+
 		
 			nNMTempPtr++;	
 
@@ -2124,6 +2142,7 @@ if (nNMWrPtr[INDX]==0)
 				if (nNMTempPtr > 0)
 				{
 								
+
 				
 				
   				nNMWrPtr[INDX]=nNMTempPtr;			
@@ -2133,7 +2152,10 @@ if (nNMWrPtr[INDX]==0)
 					nNum = fnBuildDUI(strASDU[INDX][nASDUWrPtr[INDX]].sBuff,TI_M_ME_TF_1 , 0,byNum , COT_SPONT, 0,nNum,&duiTransmit);
 					nNum = fnBuildInfObj(strASDU[INDX][nASDUWrPtr[INDX]].sBuff, byIOA, (BYTE*)strFMEvent104[INDX], nNum,duiTransmit, INDX);     /* byIOA nincs használva!!! */      
 
+
+
           strASDU[INDX][nASDUWrPtr[INDX]].nLength = nNum;       /* 2 + 4 + ASDU hossz */
+
           
           
           /* Beíró pointer növelése */
@@ -2274,7 +2296,7 @@ if (nInterrogationStep[INDX] == 3)   /* Send DP values */
 
       strASDU[INDX][nASDUWrPtr[INDX]].nLength = nNum;       /* 2 + 4 + ASDU hossz */			
 			
-			MOSCAD_sprintf(message,"Socket: %d: nInterrogationStep[INDX]=3, nNum: %d, DP offset: %d", INDX,nNum, nSendDP[INDX]);			
+			MOSCAD_sprintf(message,"Socket: %d: nInterrogationStep[INDX]=3, nNum: %d, DP offset: %d, nDataNum: %d", INDX,nNum, nSendDP[INDX], nDataNum);			
 			MOSCAD_message(message );
 	
 			nSendDP[INDX] = nSendDP[INDX] + nDataNum;
@@ -2302,15 +2324,15 @@ if (nInterrogationStep[INDX] == 3)   /* Send DP values */
 if (nInterrogationStep[INDX] == 2)   /* Send NM values */
 {
 		/* NM-k elkuldese */
-			if (nNMNum < 76)
+			if (nNMNum < 51)
 			{
 				nDataNum = nNMNum;
 			}
 			else
 			{
-				if ( (nNMNum - nSendNM[INDX]) > 75)
+				if ( (nNMNum - nSendNM[INDX]) > 50)
 				{
-					nDataNum = 75;
+					nDataNum = 50;
 				}
 				else
 				{
@@ -2328,7 +2350,7 @@ if (nInterrogationStep[INDX] == 2)   /* Send NM values */
 			
       strASDU[INDX][nASDUWrPtr[INDX]].nLength = nNum;       /* 2 + 4 + ASDU hossz */			
 			
-			MOSCAD_sprintf(message,"Socket: %d:  nInterrogationStep[INDX]=2, nNum: %d, NM offset: %d", INDX, nNum, nSendNM[INDX]);			
+			MOSCAD_sprintf(message,"Socket: %d:  nInterrogationStep[INDX]=2, nNum: %d, NM offset: %d, nDataNum: %d", INDX, nNum, nSendNM[INDX], nDataNum);			
 			MOSCAD_message(message );
 
 
@@ -2864,6 +2886,8 @@ float          *p_col_n_HI;
 
 int				nIndx;
 int				nTblIndx;
+
+
 
 nTblIndx = nIEC_Offset/240;
 nIndx    = nIEC_Offset - nTblIndx *240;
@@ -3547,6 +3571,7 @@ float         M_LO;
 float         M_HI;
 float         n_LO;
 float         n_HI;
+float         fRet;
 	
 /*IEC_M_DP_TB_1		**strDPEventWT[INDX];*/  	
 	
@@ -3671,7 +3696,9 @@ float         n_HI;
 			
 			/* fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus); */
       fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
-			fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]);
+      fnNorm2(nNM[nI], M_LO, M_HI, n_LO, n_HI,  &buf[nNum+nLenIOA+nI*5]) ;
+
+			/*fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]);*/
 			
 			nInvalid = 0;
 			if (nIECStatus  == 1)
@@ -3708,6 +3735,13 @@ float         n_HI;
 
 			/* fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus);  */
       fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
+      fRet = fnNorm2(nNM[nI], M_LO, M_HI, n_LO, n_HI,  &buf[nNum+nLenIOA+nI*5]) ;
+      
+      
+
+      /* MOSCAD_sprintf(message,"nNM[nI]: %d, fValue: %f, by0: %d, by1: %d,by2: %d,by3: %d",nNM[nI], fRet,buf[nNum+nLenIOA+nI*5],buf[nNum+nLenIOA+nI*5+1],buf[nNum+nLenIOA+nI*5+2],buf[nNum+nLenIOA+nI*5+3]);
+        MOSCAD_message(message );  */
+
 
 			/* fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]); */
 			
@@ -3717,7 +3751,7 @@ float         n_HI;
 						nInvalid = 64;
 					}
 			nInvalid = 0;
-      buf[nNum+nLenIOA+nI*3+4] = nInvalid;			
+      buf[nNum+nLenIOA+nI*5+4] = nInvalid;			
 		}
 		
 	return (nNum + 3 + duiTransmit.byDataNum*5);	
@@ -3861,6 +3895,47 @@ float         n_HI;
       		buf[nNum + nI * nObjLen + nLenIOA + 1] = byLow;
       		buf[nNum + nI * nObjLen + nLenIOA + 2] = byHigh; */     		
       		buf[nNum + nI * nObjLen + nLenIOA + 2] = strNMEvent104[INDX][nNMReadPtr[INDX]].byQ;
+      					
+			/* Olvaso pointer novelese */	 			
+			if (nNMReadPtr[INDX] < MAX_NM_EVNUM-1)
+			{
+				nNMReadPtr[INDX]++;			
+			}
+			else
+			{
+				nNMReadPtr[INDX] = 0;
+				nNMWrPtr[INDX] = 0;      		
+			}
+			nI++;
+      	} /* end while */
+   		
+    nNMReadPtr[INDX] = 0;    
+		nNMWrPtr[INDX] = 0;  		
+   	      			
+      	      			
+	return (nNum + nI * nObjLen);	
+	} /* end NM event */	
+
+	/* Short floating vlue event feladas */	
+	else if (duiTransmit.byTI == TI_M_ME_TF_1  && duiTransmit.byCOT == COT_SPONT && duiTransmit.bySequence == 0x00)
+	{			
+		nI  = 0;
+		nObjLen = nLenIOA + 5 + 7;
+		nNMReadPtr[INDX] = 0;
+		
+    	while (nNMReadPtr[INDX] != nNMWrPtr[INDX])
+      	{
+      		memcpy(&buf[nNum +  nI * nObjLen],&strFMEvent104[INDX][nNMReadPtr[INDX]].byIOA[0],nLenIOA);
+      		memcpy(&buf[nNum +  nI * nObjLen + nLenIOA],&strFMEvent104[INDX][nNMReadPtr[INDX]].byNM[0],4);
+      		
+   			/*fnLoHi(&byLow, &byHigh, strNMEvent[nNMReadPtr[INDX]].nNM);
+      		buf[nNum + nI * nObjLen + nLenIOA + 1] = byLow;
+      		buf[nNum + nI * nObjLen + nLenIOA + 2] = byHigh; */     		
+      		buf[nNum + nI * nObjLen + nLenIOA + 4] = strFMEvent104[INDX][nNMReadPtr[INDX]].byQ;
+
+      		/* IEC60870-5-104 szerintt 7 byte-os*/      		
+      		memcpy(&buf[nNum +  nI * nObjLen + nLenIOA + 1],&strFMEvent104[INDX][nNMReadPtr[INDX]].sTime.byMs[0],7);
+
       					
 			/* Olvaso pointer novelese */	 			
 			if (nNMReadPtr[INDX] < MAX_NM_EVNUM-1)
@@ -4994,7 +5069,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /* Short floating point elõállítása												*/
 /* A MOSCAD-bol 0..3200 vagy 0..4000 kozotti erteket var					*/
 /****************************************************************************/
-void fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
+float fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
 {
 int				nTemp,nTemp2;
 int				nOffset;
@@ -5002,6 +5077,9 @@ int				nProp;
 float     fKi;
 float     fBe;
 BYTE      bAux;
+int       nRet;
+char      msg[500];
+char      chNum[20];
 
  if ((n_HI - n_LO) !=0)
  {
@@ -5013,10 +5091,22 @@ BYTE      bAux;
     fKi = 0.0;
  }
  
+memcpy(chNum,&fKi,4);
 
-byFloat = &fKi;
+byFloat[0] = chNum[3];
+byFloat[1] = chNum[2];
+byFloat[2] = chNum[1];
+byFloat[3] = chNum[0];
 
 
+
+/*	MOSCAD_sprintf(msg, "fKi: %f, byFloat: %d %d %d %d %d %d %d %d, nRet: %d",fKi, byFloat[0],byFloat[1],byFloat[2],byFloat[3],byFloat[4],byFloat[5],byFloat[6],byFloat[7],nRet);
+	MOSCAD_message(msg);  */
+
+
+/*byFloat = &fKi; */ 
+
+return fKi;
 
 			
 } /* end fnNorm2 */
