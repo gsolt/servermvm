@@ -346,6 +346,11 @@ typedef	struct
 	short          *p_col_NM_LZ;
 	short          *p_col_NM_Tx;
 	short          *p_col_NM_STATUS;	
+  float          *p_col_M_LO;
+  float          *p_col_M_HI;
+  float          *p_col_n_LO;
+  float          *p_col_n_HI;
+   
 	}	strNM_TABLE ;	
 	
 /* DP tablak oszlopai */
@@ -436,7 +441,7 @@ typedef struct  {
 /*--------------------------------------------------*/
 void fnServer(unsigned short TableNumber1,unsigned short TableNumber2);
 void fnReadSPDataTime(int nIEC_Offset, unsigned char *byData,  int *nMS1, int *nMS2, int *nMin, int *bTTime, int *nXOR);
-void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus);
+void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI);
 void fnReadDPDataTime(int nIEC_Offset, BYTE *byDP,  int *nMS1, int *nMS2, int *nMin, int *bTTime);
 void fnReadDPData(int nIEC_Offset, BYTE byDP);
 void fnReadSPData2(int nIEC_Offset, unsigned char *byData);
@@ -500,6 +505,7 @@ void fnSavePARData(int nTableNum);
 void fnSendTESTFR_ACT(int INDX);
 void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear);
 void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth);
+void fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
 
 
 
@@ -678,9 +684,9 @@ short          *p_col_DC_Min;
 short          *p_col_DC_Sec;
 
 
-strSP_TABLE		sSPT[30];
+/* strSP_TABLE		sSPT[30];
 strNM_TABLE		sNMT[10];
-strDP_TABLE		sDPT[10];
+strDP_TABLE		sDPT[10];  */
 
 
 
@@ -1311,7 +1317,10 @@ long         lTimeRTU;
 long         lTimeFIU;
 int           n10sec;
 int           nSec;
-
+float         M_LO;
+float         M_HI;
+float         n_LO;
+float         n_HI;
 
 /* Inicializálás */
 
@@ -2080,12 +2089,11 @@ if (nNMWrPtr[INDX]==0)
 	for (nI=0;nI<nNMNum && nI<MAX_NM_NUM && (nNMTempPtr < MAX_NM_EVNUM-1);nI++)
 	{
 
-	fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI]);
-
+	/* fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI]); */
+  fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
 		
 		if ( (nNM[nI] > nPrNM[INDX][nI] * (1.04 )) || (nNM[nI] < nPrNM[INDX][nI] * (0.96 )) || nStatus[nI]!=nPrStatus[nI]) 
-		{		
-				
+		{						
 			/* Information object address beirasa */
 			fnBuildIOA(&strFMEvent104[INDX][nNMTempPtr].byIOA[0], lNMStart+nI);
 
@@ -2842,12 +2850,16 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /* Kiolvas egy adatot az NM adatok kozul, a VALID/INVALID statuszt NEM  figyelembe veve	*/
 /*																			*/
 /****************************************************************************/
-void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus)
+void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI)
 {
 
 short          *p_col_NMAct;
 short          *p_col_NM_LZ_Act;
 short          *p_col_NM_STATUS;
+float          *p_col_M_LO;
+float          *p_col_M_HI;
+float          *p_col_n_LO;
+float          *p_col_n_HI;
 
 
 int				nIndx;
@@ -2863,7 +2875,12 @@ nIndx    = nIEC_Offset - nTblIndx *240;
 				   	p_col_NMAct    	= sNMT[nTblIndx].p_col_NM;
 				   	p_col_NM_LZ_Act = sNMT[nTblIndx].p_col_NM_LZ;
 				   	p_col_NM_STATUS = sNMT[nTblIndx].p_col_NM_STATUS;
+            p_col_M_LO      = sNMT[nTblIndx].p_col_M_LO;
+            p_col_M_HI      = sNMT[nTblIndx].p_col_M_HI;
+            p_col_n_LO      = sNMT[nTblIndx].p_col_n_LO;
+            p_col_n_HI      = sNMT[nTblIndx].p_col_n_HI;
 				   	
+
 				   	
 				   	
 				   	*nData  		= p_col_NMAct[nIndx];
@@ -2881,7 +2898,11 @@ nIndx    = nIEC_Offset - nTblIndx *240;
 				   		*nStatus = 0;
 				   	} */
 				   	
-
+            *M_LO = p_col_M_LO[nIndx];
+            *M_HI = p_col_M_HI[nIndx];
+            *n_LO = p_col_n_LO[nIndx];
+            *n_HI = p_col_n_HI[nIndx];
+                        
 
 } /* end fnReadNMData()*/
 
@@ -3293,7 +3314,7 @@ nSaveTables =p_col_parInt[90];
 
 
 		fnSP_TABLE(30);
-		fnNM_TABLE(6);
+		fnNM_TABLE(1);
 		fnDP_TABLE(6);
     
     
@@ -3521,6 +3542,11 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 	unsigned int	nIECStatus;
 	unsigned int	nInvalid;
 	BYTE			byDPVal;
+
+float         M_LO;
+float         M_HI;
+float         n_LO;
+float         n_HI;
 	
 /*IEC_M_DP_TB_1		**strDPEventWT[INDX];*/  	
 	
@@ -3640,14 +3666,11 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 		
 		memcpy(&buf[nNum], &byT[0],nLenIOA);
 		
-		
-			
-
-		
 		for (nI=0;nI<duiTransmit.byDataNum;nI++)
 		{
 			
-			fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus);
+			/* fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus); */
+      fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
 			fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]);
 			
 			nInvalid = 0;
@@ -3676,18 +3699,16 @@ int fnBuildInfObj(BYTE *buf, BYTE *byIOA, BYTE *byData, int nNum,IEC_DUI_104	dui
 
 		lNMSt = byIOA[0] + 256 * byIOA[1] + 65536 * byIOA[2];
 		nOffset = lNMSt - lNMStart;
-		
-		
+				
 		memcpy(&buf[nNum], &byT[0],nLenIOA);
-		
-		
-			
-
 		
 		for (nI=0;nI<duiTransmit.byDataNum;nI++)
 		{
 			
-			fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus);
+
+			/* fnReadNMData(nI + nOffset, &nNMVal, &nLiveZ, &nIECStatus);  */
+      fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
+
 			/* fnNorm(nNMVal, nLiveZ, &buf[nNum+nLenIOA+nI*3]); */
 			
 			nInvalid = 0;
@@ -4246,6 +4267,10 @@ for (nI=0; nI<nNum;nI++)
 				   	sNMT[nI].p_col_NM_LZ  = (short *)(sNMT[nI].table_NM.ColDataPtr[1]);
 				   	sNMT[nI].p_col_NM_Tx  = (short *)(sNMT[nI].table_NM.ColDataPtr[2]);
 				   	sNMT[nI].p_col_NM_STATUS  = (short *)(sNMT[nI].table_NM.ColDataPtr[3]);
+            sNMT[nI].p_col_M_LO       = (float *)(sNMT[nI].table_NM.ColDataPtr[4]);
+            sNMT[nI].p_col_M_HI       = (float *)(sNMT[nI].table_NM.ColDataPtr[5]);
+            sNMT[nI].p_col_n_LO       = (float *)(sNMT[nI].table_NM.ColDataPtr[6]);
+            sNMT[nI].p_col_n_HI       = (float *)(sNMT[nI].table_NM.ColDataPtr[7]);
 	
 
 	
@@ -4969,17 +4994,27 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /* Short floating point elõállítása												*/
 /* A MOSCAD-bol 0..3200 vagy 0..4000 kozotti erteket var					*/
 /****************************************************************************/
-void fnNorm2(int nBe, int nLiveZero, BYTE *byFloat)
+void fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
 {
 int				nTemp,nTemp2;
 int				nOffset;
 int				nProp;
+float     fKi;
+float     fBe;
+BYTE      bAux;
 
+ if ((n_HI - n_LO) !=0)
+ {
+    fBe = nBe;
+    fKi = (fBe - n_LO)*(M_HI - M_LO)/(n_HI-n_LO) + M_LO;  
+ }
+ else
+ {
+    fKi = 0.0;
+ }
+ 
 
-
-
-
-
+byFloat = &fKi;
 
 
 
