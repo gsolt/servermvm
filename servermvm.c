@@ -2877,17 +2877,17 @@ void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero,
 
 short          *p_col_NMAct;
 short          *p_col_NM_LZ_Act;
-short          *p_col_NM_STATUS;
+float          *p_col_NM_STATUS;
 float          *p_col_M_LO;
 float          *p_col_M_HI;
 float          *p_col_n_LO;
 float          *p_col_n_HI;
-
+char            buf[500];
 
 int				nIndx;
 int				nTblIndx;
-
-
+float     fBe;
+float     fKi;
 
 nTblIndx = nIEC_Offset/240;
 nIndx    = nIEC_Offset - nTblIndx *240;
@@ -2927,6 +2927,21 @@ nIndx    = nIEC_Offset - nTblIndx *240;
             *n_LO = p_col_n_LO[nIndx];
             *n_HI = p_col_n_HI[nIndx];
                         
+ if ((*n_HI - *n_LO) !=0)
+ {
+    fBe = *nData;
+    fKi = (fBe - *n_LO)*(*M_HI - *M_LO)/(*n_HI-*n_LO) + *M_LO;  
+ }
+ else
+ {
+    fKi = 0.0;
+ }
+
+p_col_NM_STATUS[nIndx] = fKi;
+
+				/*	MOSCAD_sprintf(message,"nIndx: %d, fKi: %f,", nIndx,fKi );			
+					MOSCAD_message(message ); */
+
 
 } /* end fnReadNMData()*/
 
@@ -5069,7 +5084,8 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 
 /****************************************************************************/
 /* Short floating point elõállítása												*/
-/* A MOSCAD-bol 0..3200 vagy 0..4000 kozotti erteket var					*/
+/* 	M_LO. M_HI: mérnöki egység			*/
+/*  A/D érték                       */
 /****************************************************************************/
 float fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
 {
