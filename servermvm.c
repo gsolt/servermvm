@@ -441,7 +441,7 @@ typedef struct  {
 /*--------------------------------------------------*/
 void fnServer(unsigned short TableNumber1,unsigned short TableNumber2);
 void fnReadSPDataTime(int nIEC_Offset, unsigned char *byData,  int *nMS1, int *nMS2, int *nMin, int *bTTime, int *nXOR);
-void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI);
+void fnReadNMData(int nIEC_Offset, long *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI);
 void fnReadDPDataTime(int nIEC_Offset, BYTE *byDP,  int *nMS1, int *nMS2, int *nMin, int *bTTime);
 void fnReadDPData(int nIEC_Offset, BYTE byDP);
 void fnReadSPData2(int nIEC_Offset, unsigned char *byData);
@@ -505,7 +505,7 @@ void fnSavePARData(int nTableNum);
 void fnSendTESTFR_ACT(int INDX);
 void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear);
 void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth);
-float fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
+float fnNorm2(long nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
 
 
 
@@ -831,8 +831,8 @@ IEC_M_DP_TB_1		strDPEventWT[MAX_CONN][MAX_DP_EVNUM];
 int					nDPWrPtr[MAX_CONN];
 int					nDPReadPtr[MAX_CONN];
 
-unsigned int		nNM[MAX_NM_NUM];
-unsigned int		nPrNM[MAX_CONN][MAX_NM_NUM];
+long        		nNM[MAX_NM_NUM];
+long        		nPrNM[MAX_CONN][MAX_NM_NUM];
 unsigned int		nLiveZero[MAX_NM_NUM];
 unsigned int		nStatus[MAX_NM_NUM];
 unsigned int		nPrStatus[MAX_NM_NUM];
@@ -2872,10 +2872,10 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /* Kiolvas egy adatot az NM adatok kozul, a VALID/INVALID statuszt NEM  figyelembe veve	*/
 /*																			*/
 /****************************************************************************/
-void fnReadNMData(int nIEC_Offset, unsigned int *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI)
+void fnReadNMData(int nIEC_Offset, long *nData, unsigned int *nLiveZero, unsigned int *nStatus, float *M_LO, float *M_HI, float *n_LO, float *n_HI)
 {
 
-short          *p_col_NMAct;
+long           *p_col_NMAct;
 short          *p_col_NM_LZ_Act;
 float          *p_col_NM_STATUS;
 float          *p_col_M_LO;
@@ -5087,7 +5087,7 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /* 	M_LO. M_HI: mérnöki egység			*/
 /*  A/D érték                       */
 /****************************************************************************/
-float fnNorm2(int nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
+float fnNorm2(long nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
 {
 int				nTemp,nTemp2;
 int				nOffset;
