@@ -1322,6 +1322,8 @@ float         M_HI;
 float         n_LO;
 float         n_HI;
 float         fRet;
+float         fAbsVal;
+long          lAbsVal;
 /* Inicializálás */
 
 
@@ -2091,8 +2093,9 @@ if (nNMWrPtr[INDX]==0)
 
 	/* fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI]); */
   fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
+  lAbsVal = abs(nNM[nI]);
 		
-		if ( (nNM[nI] > nPrNM[INDX][nI] * (1.04 )) || (nNM[nI] < nPrNM[INDX][nI] * (0.96 )) || nStatus[nI]!=nPrStatus[nI]) 
+		if ( ( lAbsVal > nPrNM[INDX][nI] * (1.04 ) ) || ( lAbsVal < nPrNM[INDX][nI] * (0.96 ) )   ) 
 		{						
 
 				/* Msec es perc beirasa */
@@ -2127,7 +2130,7 @@ if (nNMWrPtr[INDX]==0)
 					}
 					
 			strFMEvent104[INDX][nNMTempPtr].byQ = nInvalid;
-			nPrNM[INDX][nI] = nNM[nI];
+			nPrNM[INDX][nI] = lAbsVal;
 			nPrStatus[nI] = nStatus[nI];
 
 
@@ -2159,8 +2162,8 @@ if (nNMWrPtr[INDX]==0)
           
           
           /* Beíró pointer növelése */
-  				/* MOSCAD_sprintf(message,"Socket: %d: Elküldendõ NM ASDU: nASDUWrPtr[INDX]: %d, length: %d",INDX, nASDUWrPtr[INDX], strASDU[INDX][nASDUWrPtr[INDX]].nLength);			
-					MOSCAD_message(message ); */
+  				 MOSCAD_sprintf(message,"Socket: %d: Elküldendõ NM ASDU: nASDUWrPtr[INDX]: %d, length: %d",INDX, nASDUWrPtr[INDX], strASDU[INDX][nASDUWrPtr[INDX]].nLength);			
+					MOSCAD_message(message ); 
 				
           if (nASDUWrPtr[INDX]<MAX_ASDU-5)
           {
