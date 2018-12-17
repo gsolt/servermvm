@@ -3451,7 +3451,7 @@ if ((nNoRestarted == 0) && (nDelayedStart ==1) && (nDisableWrite ==0)  && (Total
 
 		  MOSCAD_wait(800); 	
 
-				fnGetData(); /* SRAM adatainak tábla adatainak kimentése MOSCAD  táblákba*/
+				/*fnGetData();*/ /* SRAM adatainak tábla adatainak kimentése MOSCAD  táblákba*/
         
         MOSCAD_wait(400); 
         
@@ -4847,7 +4847,7 @@ ch = (char *)MOSCAD_bspSRamStart();
    					ch[nJ]=0;
  			
 					} 
-fnGetData();
+/*fnGetData();*/
 
 					       MOSCAD_sprintf(message,"IECDRV2: SRAM erased");
 					       MOSCAD_message(message );
