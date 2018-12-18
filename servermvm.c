@@ -36,6 +36,13 @@
 #include "moscsock.h"
 #include "stdio.h"
 #include "string.h"
+#include "math.h"
+
+
+/* Event naplózáshoz*/
+#define MAX_EVENT   1000		
+#define MAX_BIT_NUM 80  		
+
 
 #define MAX_ASDU		80
 
@@ -431,7 +438,30 @@ typedef struct  {
 							} strASDUType;
  
 				
+/* Események ***************************************/
+typedef	struct
+	{
+	unsigned short nIdent[MAX_EVENT];
+	unsigned short nValue[MAX_EVENT];
+	unsigned short nYear[MAX_EVENT];
+	unsigned short nMonth[MAX_EVENT];
+	unsigned short nDay[MAX_EVENT];
+	unsigned short nHour[MAX_EVENT];
+	unsigned short nMin[MAX_EVENT];
+	unsigned short nSec[MAX_EVENT];
+	}	strEvents ;	
+  
+/* Esemény tábla oszlopa */
+typedef	struct
+	{
+	   CB_TABLE_INFO             table_Bits;
+	   unsigned short           *p_col_Bits;
+	}	strBIT_TABLE;  	
+  
 
+unsigned short  prValue[MAX_BIT_NUM];
+unsigned short  actValue[MAX_BIT_NUM];
+unsigned short nWrIndex = 0;
 
 /*************************************************************************************************************/
 
@@ -669,8 +699,16 @@ unsigned short	nTableNum;
 /* MOSCAD tablak oszlopai */
 short          *p_col_parBool;	
 short          *p_col_parInt;
+
 short          *p_col_RxMon;
 short          *p_col_TxMon;
+unsigned char  *p_col_BITS; 
+unsigned short *p_col_MB_RX; 
+unsigned short *p_col_MB_TX1; 
+unsigned short *p_col_MB_TX2; 
+unsigned short *p_col_tart1; 
+unsigned short *p_col_tart2; 
+
 short          *p_col_Stat;
 
 
@@ -854,6 +892,7 @@ unsigned long lOldSec = 0;
 
 
 strTotalData		*TotalData;
+strEvents       *Events;
 int					nDelayedStart;
 unsigned long		lLengthTotalData;
 
@@ -870,23 +909,65 @@ int					nDisableWrite;
 int             nDataSave = 0;
 int             nFirstSave = 0;
 /****************************************************************************/
-/* Main program																*/
+/* Main program		- ez végzi most az esemény képzést és tárolást az SRAM-ba														*/
 /****************************************************************************/
 void fnServer(unsigned short TableNumber1,unsigned short TableNumber2)
 {
+unsigned short I;
+unsigned short J;
+unsigned char  byData;
+char            msg[500];
+MOSCAD_DATE_TM  mdt;
+
+
+
 TableNumber1 = 1;
 TableNumber2 = 2;
 
+MOSCAD_get_datetime(&mdt);
+
+
+
+for (I=0;I<MAX_BIT_NUM/8;I++)
+  {
+  byData = p_col_BITS[I];
+  for (J=0;J<8;J++)
+    {
+       actValue[I*8+7-J] = (byData >> J) & 1;
+    } /* end for */
+
+  } /* end for */
+
+
+for (I=0;I<MAX_BIT_NUM;I++ )
+  {
+  if (actValue[I]!=prValue[I])
+    {
+     Events.nIdent[nWrIndex]  = I;
+     Events.nValue[nWrIndex]  = actValue[I];
+     Events.nYear[nWrIndex]   = mdt.year;
+     Events.nMonth[nWrIndex]  = mdt.month;
+     Events.nDay[nWrIndex]    = mdt.date;
+     Events.nHour[nWrIndex]   = mdt.hours;
+     Events.nMin[nWrIndex]    = mdt.minutes;
+     Events.nSec[nWrIndex]    = mdt.second;
+     
+     
+
+     
+      
+  	 MOSCAD_sprintf(msg, "Esemény: index %d, érték: %d", I,actValue[I]);
+	   MOSCAD_message(msg);
+    
+    prValue[I]=actValue[I];
+    } /* end if */
+  } /* end for */
+
 	
- MOSCAD_message("Server fõprogram");	
+ /* MOSCAD_message("Server fõprogram"); */
+ 	
 	
-
-
-
-
-}
-
-
+}  /* end fnServer*/
 /*--------------------------------------------------------------------------*/
 /* The list of the functions included in this block                         */
 /*--------------------------------------------------------------------------*/
@@ -3027,9 +3108,10 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
 
        	if ( lSRAMLength > 0)    /* 2015.05.16. */
 				{
-     			TotalData = (strTotalData *)MOSCAD_bspSRamStart();
-         	lLengthTotalData = sizeof(strTotalData);
-          sprintf(message,"SRAM length: %ld, TotalData length: %ld",lSRAMLength,lLengthTotalData);
+     			/* TotalData = (strTotalData *)MOSCAD_bspSRamStart();*/
+          Events = (strEvents *)MOSCAD_bspSRamStart();
+         	lLengthTotalData = sizeof(strEvents);
+          sprintf(message,"SRAM length: %ld, Events length: %ld",lSRAMLength,lLengthTotalData);
     			MOSCAD_message(message );         	          	
 
            p_col_Stat[26] = 1;
@@ -3123,7 +3205,7 @@ if ((nStart == 0) )
    		}
 	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]);	
 	
-	/* Rx, Tx monitor */
+	/* 3. tábla Rx, Tx monitor + Events */
 	nRxMonTblIndx = p_col_parInt[0];	
 	if (MOSCAD_get_table_info (nRxMonTblIndx,&table_RxMon)!=0 )
    		{
@@ -3133,6 +3215,13 @@ if ((nStart == 0) )
    		}
 	p_col_RxMon = (short *)(table_RxMon.ColDataPtr[0]);		
 	p_col_TxMon = (short *)(table_RxMon.ColDataPtr[1]);		
+  p_col_BITS  = (unsigned char *)(table_RxMon.ColDataPtr[2]);
+  p_col_MB_RX = (unsigned short *)(table_RxMon.ColDataPtr[3]);
+  p_col_MB_TX1= (unsigned short *)(table_RxMon.ColDataPtr[4]);
+  p_col_MB_TX2= (unsigned short *)(table_RxMon.ColDataPtr[5]);
+  p_col_tart1 = (unsigned short *)(table_RxMon.ColDataPtr[6]);
+  p_col_tart2 = (unsigned short *)(table_RxMon.ColDataPtr[7]);
+   
 	
 	
 	byRowNumMon = table_RxMon.NumOfRows;
