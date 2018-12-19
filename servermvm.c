@@ -456,7 +456,8 @@ typedef	struct
 	{
 	   CB_TABLE_INFO             table_Bits;
 	   unsigned short           *p_col_Bits;
-	}	strBIT_TABLE;  	
+  }
+strBIT_TABLE;  	
   
 
 unsigned short  prValue[MAX_BIT_NUM];
@@ -943,24 +944,31 @@ for (I=0;I<MAX_BIT_NUM;I++ )
   {
   if (actValue[I]!=prValue[I])
     {
-     Events.nIdent[nWrIndex]  = I;
-     Events.nValue[nWrIndex]  = actValue[I];
-     Events.nYear[nWrIndex]   = mdt.year;
-     Events.nMonth[nWrIndex]  = mdt.month;
-     Events.nDay[nWrIndex]    = mdt.date;
-     Events.nHour[nWrIndex]   = mdt.hours;
-     Events.nMin[nWrIndex]    = mdt.minutes;
-     Events.nSec[nWrIndex]    = mdt.second;
-     
-     
-
-     
+     Events->nIdent[nWrIndex]  = I;
+     Events->nValue[nWrIndex]  = actValue[I];
+     Events->nYear[nWrIndex]   = mdt.year;
+     Events->nMonth[nWrIndex]  = mdt.month;
+     Events->nDay[nWrIndex]    = mdt.date;
+     Events->nHour[nWrIndex]   = mdt.hours;
+     Events->nMin[nWrIndex]    = mdt.minutes;
+     Events->nSec[nWrIndex]    = mdt.seconds;
+          
       
-  	 MOSCAD_sprintf(msg, "Esemény: index %d, érték: %d", I,actValue[I]);
+  	 MOSCAD_sprintf(msg, "Esemény: azonosító %d, érték: %d, Év: %d, Hó: %d, Nap: %d, Óra: %d, Perc: %d, Másodperc: %d, nWrIndex: %d", Events->nIdent[nWrIndex],Events->nValue[nWrIndex] ,Events->nYear[nWrIndex],Events->nMonth[nWrIndex],Events->nDay[nWrIndex],Events->nHour[nWrIndex],Events->nMin[nWrIndex],Events->nSec[nWrIndex], nWrIndex);
 	   MOSCAD_message(msg);
     
     prValue[I]=actValue[I];
-    } /* end if */
+    
+    if (nWrIndex<MAX_EVENT)
+      {
+      nWrIndex++;
+      } /* end if*/
+    else
+      {
+      nWrIndex = 0;
+      }
+        
+    } /* end if esemény volt */
   } /* end for */
 
 	
@@ -5181,14 +5189,9 @@ nIndx    = nIEC_Offset - nTblIndx *250;
 /****************************************************************************/
 float fnNorm2(long nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat)
 {
-int				nTemp,nTemp2;
-int				nOffset;
-int				nProp;
+
 float     fKi;
 float     fBe;
-BYTE      bAux;
-int       nRet;
-char      msg[500];
 char      chNum[20];
 
  if ((n_HI - n_LO) !=0)
