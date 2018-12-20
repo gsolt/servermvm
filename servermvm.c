@@ -449,6 +449,7 @@ typedef	struct
 	unsigned short nHour[MAX_EVENT];
 	unsigned short nMin[MAX_EVENT];
 	unsigned short nSec[MAX_EVENT];
+  unsigned short nActWrIndex;
 	}	strEvents ;	
   
 /* Esemény tábla oszlopa */
@@ -463,6 +464,8 @@ strBIT_TABLE;
 unsigned short  prValue[MAX_BIT_NUM];
 unsigned short  actValue[MAX_BIT_NUM];
 unsigned short nWrIndex = 0;
+unsigned short  prReadAct = 0;
+unsigned short  prStartIndex = 0;
 
 /*************************************************************************************************************/
 
@@ -825,7 +828,7 @@ BYTE		byCAOA_HI;
 /* Belso allapot valtozok */
 int					nLinkInit1;
 int					nLinkInit2;
-int					nStart;
+int					nStart = 0;
 int					nLastTx2;
 int					nActRptNum;
 int					nTxFCB;
@@ -919,6 +922,8 @@ unsigned short J;
 unsigned char  byData;
 char            msg[500];
 MOSCAD_DATE_TM  mdt;
+unsigned short  nStartIndex;
+unsigned short  nReadAct;
 
 
 
@@ -944,6 +949,8 @@ for (I=0;I<MAX_BIT_NUM;I++ )
   {
   if (actValue[I]!=prValue[I])
     {
+    nWrIndex = Events->nActWrIndex;
+    
      Events->nIdent[nWrIndex]  = I;
      Events->nValue[nWrIndex]  = actValue[I];
      Events->nYear[nWrIndex]   = mdt.year;
@@ -967,12 +974,71 @@ for (I=0;I<MAX_BIT_NUM;I++ )
       {
       nWrIndex = 0;
       }
+    Events->nActWrIndex = nWrIndex;  
         
     } /* end if esemény volt */
   } /* end for */
 
-	
- /* MOSCAD_message("Server fõprogram"); */
+	/* Lekérdezések kezelése -------------------------------------------------*/
+   p_col_MB_TX2[0] = nWrIndex;
+   nReadAct     = p_col_MB_RX[1];
+   nStartIndex  = p_col_MB_RX[0];
+   
+   if(nReadAct==0) /* Nem Aktív a lekérdezés */
+    {
+    /* p_col_MB_TX2[1] = 0; */
+    }
+   if(nReadAct==1 /* && nReadAct!=prReadAct */) /* Aktív a lekérdezés */
+    {
+    p_col_MB_TX2[1] = 0;
+    
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex]= Events->nIdent[I];
+      } /* end for */
+      
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+30]= Events->nValue[I];
+      } /* end for */
+      
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+60]= Events->nYear[I];
+      } /* end for */
+      
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+90]= Events->nMonth[I];
+      } /* end for */
+      
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+120]= Events->nDay[I];
+      } /* end for */
+
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+150]= Events->nHour[I];
+      } /* end for */
+
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+180]= Events->nMin[I];
+      } /* end for */
+
+    for (I=nStartIndex;I<nStartIndex+30 && I<MAX_EVENT && I<nWrIndex;I++)
+      {
+      p_col_MB_TX1[I-nStartIndex+210]= Events->nSec[I];
+      p_col_MB_TX2[2] = I;
+      } /* end for */
+
+   p_col_MB_TX2[1] = 1; /* Jelzi, hogy kész*/
+   p_col_MB_RX[1] = 0; /* Jelzi, hogy jöhet a következõ */   
+      
+    } /* end if  aktív a lekérdezés*/
+   
+   
  	
 	
 }  /* end fnServer*/
@@ -3212,6 +3278,9 @@ if ((nStart == 0) )
         return;
    		}
 	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]);	
+        MOSCAD_sprintf(message,"14. Valid information in table: %d, p_col_par_int: %p",nTableNum2, p_col_parInt);
+        MOSCAD_error(message );
+
 	
 	/* 3. tábla Rx, Tx monitor + Events */
 	nRxMonTblIndx = p_col_parInt[0];	
@@ -3359,17 +3428,19 @@ if ((nStart == 0) )
         MOSCAD_error(message );
 
 
-	} /* end if nStart==1 parameter tabla feldolgozas ---------------------------------------------------------------------------------------------------*/
+	} /* end if nStart==0 parameter tabla feldolgozas ---------------------------------------------------------------------------------------------------*/
 	 
+
+
  
    
-   	if (MOSCAD_get_table_info (nTableNum2,&table_parInt)!=0 )
+/*   	if (MOSCAD_get_table_info (nTableNum2,&table_parInt)!=0 )
    		{
-        MOSCAD_sprintf(message,"14. No valid information in table: %d",nTableNum2);
+        MOSCAD_sprintf(message,"14. No valid information in table: %d, p_col_par_int: %p",nTableNum2, table_parInt.ColDataPtr[0]);
         MOSCAD_error(message );
         return;
    		}
-	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]);	
+	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]); */	
 	 
 	 
 nStart = 1;
@@ -3486,8 +3557,8 @@ if (nResetSRAM ==1)
 
 
 
-/*if (2<1)
-{ */
+if (2<1)
+{ 
    /* Write data to SRAM ************************************************************************************/		
 		if ((nNoRestarted == 1) && (nSaveTables ==1) && (p_col_parInt[8] ==5) && (p_col_parInt[13] ==6)  )
 			{	
@@ -3563,7 +3634,7 @@ if ((nNoRestarted == 0) && (nDelayedStart ==1) && (nDisableWrite ==0)  && (Total
 
 
 
-/*}*/  /* end if 2<1 */
+  } /* end if 2<1 */
 
 } /* end fnReadPar()*/
 
