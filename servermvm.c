@@ -3151,8 +3151,8 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
 
 
 
-/*	
-           if (MOSCAD_run_task(CB_TaskA, rx_task, NULL) !=0 )
+	
+/*           if (MOSCAD_run_task(CB_TaskA, rx_task, NULL) !=0 )
             {
                MOSCAD_error("Can't run rx_task");
             }
@@ -3168,7 +3168,7 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
             {
                MOSCAD_error("Can't run event_task");
             }
- */
+*/ 
  
  
       	     MOSCAD_largest_available_free_mem(&lLargest);
@@ -3203,21 +3203,21 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
 
 
  
-         if (MOSCAD_run_task(CB_TaskL, fnTaskCreateSocket, NULL) !=0 )
+        if (MOSCAD_run_task(CB_TaskL, fnTaskCreateSocket, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTasCreateSocket");
-         }
-         
-       if (MOSCAD_run_task(CB_TaskM, fnTaskServer0, NULL) !=0 )
+         } 
+        
+         if (MOSCAD_run_task(CB_TaskM, fnTaskServer0, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskServer0");
          }
         
-         if (MOSCAD_run_task(CB_TaskM, fnTaskServer1, NULL) !=0 )
+        if (MOSCAD_run_task(CB_TaskN, fnTaskServer1, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskServer1");
          }  
-        
+      
          if (MOSCAD_run_task(CB_TaskK, fnTaskSpont, NULL) !=0 )
          {
             MOSCAD_error("Can't run fnTaskSpont"); 
@@ -3434,13 +3434,13 @@ if ((nStart == 0) )
 
  
    
-/*   	if (MOSCAD_get_table_info (nTableNum2,&table_parInt)!=0 )
+   	if (MOSCAD_get_table_info (nTableNum2,&table_parInt)!=0 )
    		{
         MOSCAD_sprintf(message,"14. No valid information in table: %d, p_col_par_int: %p",nTableNum2, table_parInt.ColDataPtr[0]);
         MOSCAD_error(message );
         return;
    		}
-	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]); */	
+	p_col_parInt = (short *)(table_parInt.ColDataPtr[0]); 	
 	 
 	 
 nStart = 1;
