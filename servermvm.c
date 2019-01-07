@@ -40,7 +40,7 @@
 
 
 /* Event naplózáshoz*/
-#define MAX_EVENT   1000		
+#define MAX_EVENT   100000		
 #define MAX_BIT_NUM 80  		
 
 
@@ -961,8 +961,8 @@ for (I=0;I<MAX_BIT_NUM;I++ )
      Events->nSec[nWrIndex]    = mdt.seconds;
           
       
-  	 MOSCAD_sprintf(msg, "Esemény: azonosító %d, érték: %d, Év: %d, Hó: %d, Nap: %d, Óra: %d, Perc: %d, Másodperc: %d, nWrIndex: %d", Events->nIdent[nWrIndex],Events->nValue[nWrIndex] ,Events->nYear[nWrIndex],Events->nMonth[nWrIndex],Events->nDay[nWrIndex],Events->nHour[nWrIndex],Events->nMin[nWrIndex],Events->nSec[nWrIndex], nWrIndex);
-	   MOSCAD_message(msg);
+  	 /* MOSCAD_sprintf(msg, "Esemény: azonosító %d, érték: %d, Év: %d, Hó: %d, Nap: %d, Óra: %d, Perc: %d, Másodperc: %d, nWrIndex: %d", Events->nIdent[nWrIndex],Events->nValue[nWrIndex] ,Events->nYear[nWrIndex],Events->nMonth[nWrIndex],Events->nDay[nWrIndex],Events->nHour[nWrIndex],Events->nMin[nWrIndex],Events->nSec[nWrIndex], nWrIndex);
+	   MOSCAD_message(msg); */
     
     prValue[I]=actValue[I];
     
