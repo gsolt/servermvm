@@ -40,7 +40,7 @@
 
 
 /* Event naplózáshoz*/
-#define MAX_EVENT   100000		
+#define MAX_EVENT   60000		
 #define MAX_BIT_NUM 80  		
 
 
@@ -912,6 +912,10 @@ int					nDisableWrite;
 /* 2015.04.16 */
 int             nDataSave = 0;
 int             nFirstSave = 0;
+
+/* 2019.01.08.*/
+int             nSite_ID; /* saját site ID */
+
 /****************************************************************************/
 /* Main program		- ez végzi most az esemény képzést és tárolást az SRAM-ba														*/
 /****************************************************************************/
@@ -1038,6 +1042,11 @@ for (I=0;I<MAX_BIT_NUM;I++ )
       
     } /* end if  aktív a lekérdezés*/
    
+if (   p_col_MB_RX[11] == 1) /* Jelzi, hogy a beíró pontert át kell írni */
+  {
+    Events->nActWrIndex = p_col_MB_RX[10];
+    p_col_MB_RX[11] = 0;      
+  }   
    
  	
 	
@@ -1094,6 +1103,8 @@ void user_control_function(int control)
 
    			fnIEC_Init();
 			 
+        p_col_MB_TX2[4] = MOSCAD_site_id();
+        p_col_MB_TX2[3] = MAX_EVENT/10;
 
 
          break;
@@ -3189,6 +3200,8 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
     			MOSCAD_message(message );         	          	
 
            p_col_Stat[26] = 1;
+          Events->nActWrIndex = 0;
+
         }
         else
 				{
