@@ -26,7 +26,10 @@
 * 1.8 2015.05.04					  Ha nem jó a dinamikus site table, nem
 									  kommunikál ( a statisztika tábla 16. eleme nem nulla)          
 * 1.9 2015.09.21					  Ha nem jó az RTU ideje, akkor a Front End
-									  idejét használja									                     
+									  idejét használja									     
+  2.0 2019.03.04    P értéke pozítív legyen
+                    A mérésváltozások küszöbértéke különbözõ lehessen
+                    A göngyölt értékeknél a különbség legyen a változás oka (10 kWh)                                  
 ***-*************************************************************************/
 
 /*--------------------------------------------------*/
