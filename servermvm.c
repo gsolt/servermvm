@@ -543,7 +543,7 @@ void fnSendTESTFR_ACT(int INDX);
 void fnWriteSPTime(int nIEC_Offset,  int nMS1, int nMS2, int nMin, int nHour, int nDay, int nMonth, int nYear);
 void fnWriteDPTime(int nIEC_Offset,   int *nMS1, int *nMS2, int *nMin, int nHour, int nDay, int nMonth);
 float fnNorm2(long nBe, float M_LO, float M_HI, float n_LO, float n_HI,  BYTE *byFloat);
-
+void fnInitDelta(void);
 
 
 /* taskok */
@@ -919,6 +919,7 @@ int             nFirstSave = 0;
 /* 2019.01.08.*/
 int             nSite_ID; /* saját site ID */
 
+float		fDelta[MAX_NM_NUM];            /* szignifikáns változás értéke*/        
 /****************************************************************************/
 /* Main program		- ez végzi most az esemény képzést és tárolást az SRAM-ba														*/
 /****************************************************************************/
@@ -2264,7 +2265,8 @@ if (nNMWrPtr[INDX]==0)
   fnReadNMData(nI, &nNM[nI], &nLiveZero[nI], &nStatus[nI], &M_LO, &M_HI, &n_LO, &n_HI);
   lAbsVal = abs(nNM[nI]);
 		
-		if ( ( lAbsVal > nPrNM[INDX][nI] * (1.04 ) ) || ( lAbsVal < nPrNM[INDX][nI] * (0.96 ) )   ) 
+   
+		if (  (( ( lAbsVal > nPrNM[INDX][nI] * (1+fDelta[nI] ) ) || ( lAbsVal < nPrNM[INDX][nI] * (1-fDelta[nI] ) )   )  && nI<22)   || ( (( lAbsVal > (nPrNM[INDX][nI] +fDelta[nI]) )      && (nI>21) ))   )
 		{						
 
 				/* Msec es perc beirasa */
@@ -3186,10 +3188,10 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
  
  
       	     MOSCAD_largest_available_free_mem(&lLargest);
-	   		 MOSCAD_sprintf(message,"2018.11.21 IEC104 MVM server  program. Ver1.0: Largest available free memory: %ld",lLargest);
+	   		 MOSCAD_sprintf(message,"2019.03.04 IEC104 MVM server  program. Ver2.0: Largest available free memory: %ld",lLargest);
    			 MOSCAD_message(message );
 
-         p_col_Stat[25] = 1;  /* Version 1.9  2015.09.21. */
+         p_col_Stat[25] = 2;  /* Version 1.9  2015.09.21. */
 
 
  			lSRAMLength=MOSCAD_bspSRamLength();   
@@ -3239,7 +3241,7 @@ MOSCAD_led_off(CB_ACE_LED_ID_USR4);
             MOSCAD_error("Can't run fnTaskSpont"); 
          } 
 
-
+fnInitDelta();
  
 } /* end fnIEC_init()*/
 
@@ -5283,6 +5285,7 @@ char      chNum[20];
 
  if ((n_HI - n_LO) !=0)
  {
+    nBe  = abs(nBe);
     fBe = nBe;
     fKi = (fBe - n_LO)*(M_HI - M_LO)/(n_HI-n_LO) + M_LO;  
  }
@@ -5310,3 +5313,41 @@ return fKi;
 
 			
 } /* end fnNorm2 */
+
+/****************************************************************************/
+/* Inicializálja a delta értékeket a szignifikáns jelváltozáshoz	*/
+/*																			*/
+/****************************************************************************/
+void fnInitDelta()
+{
+
+fDelta[0] = 0.04;
+fDelta[1] = 0.04;
+fDelta[2] = 0.04;
+fDelta[3] = 0.04;
+fDelta[4] = 0.04;
+fDelta[5] = 0.04;
+fDelta[6] = 0.005;
+fDelta[7] = 0.04;
+fDelta[8] = 0.005;
+fDelta[9] = 0.005;
+fDelta[10] = 0.005;
+fDelta[11] = 0.04;
+fDelta[12] = 0.04;
+fDelta[13] = 0.005;
+fDelta[14] = 0.005;
+fDelta[15] = 0.005;
+fDelta[16] = 0.04;
+fDelta[17] = 0.04;
+fDelta[18] = 0.04;
+fDelta[19] = 0.04;
+fDelta[20] = 0.005;
+fDelta[21] = 0.04;
+fDelta[22] = 10.0;
+fDelta[23] = 10.0;
+fDelta[24] = 0.04;
+fDelta[25] = 0.04;
+
+
+
+}
