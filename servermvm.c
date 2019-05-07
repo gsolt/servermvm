@@ -2287,7 +2287,7 @@ if (nNMWrPtr[INDX]==0)
 			/*fnNorm(nNM[nI], nLiveZero[nI], &strNMEvent104[INDX][nNMTempPtr].byNM[0]); */
       fRet = fnNorm2(nNM[nI], M_LO, M_HI, n_LO, n_HI,  &strFMEvent104[INDX][nNMTempPtr].byNM[0]) ;
 
-       MOSCAD_sprintf(message,"Változás: nNM[nI]: %d, fValue: %f,  by0: %d, by1: %d,by2: %d,by3: %d",nNM[nI], fRet,strFMEvent104[INDX][nNMTempPtr].byNM[0],strFMEvent104[INDX][nNMTempPtr].byNM[1],strFMEvent104[INDX][nNMTempPtr].byNM[2],strFMEvent104[INDX][nNMTempPtr].byNM[3]);
+       MOSCAD_sprintf(message,"Változás: nNM[nI]: %d, fValue: %f,  nI: %d",nNM[nI], fRet,nI);
         MOSCAD_message(message ); 
 
 			
@@ -5327,16 +5327,16 @@ fDelta[2] = 0.04;
 fDelta[3] = 0.04;
 fDelta[4] = 0.04;
 fDelta[5] = 0.04;
-fDelta[6] = 0.005;
+fDelta[6] = 0.003;
 fDelta[7] = 0.04;
-fDelta[8] = 0.005;
-fDelta[9] = 0.005;
-fDelta[10] = 0.005;
+fDelta[8] = 0.003;
+fDelta[9] = 0.003;
+fDelta[10] = 0.003;
 fDelta[11] = 0.04;
 fDelta[12] = 0.04;
-fDelta[13] = 0.005;
-fDelta[14] = 0.005;
-fDelta[15] = 0.005;
+fDelta[13] = 0.003;
+fDelta[14] = 0.003;
+fDelta[15] = 0.003;
 fDelta[16] = 0.04;
 fDelta[17] = 0.04;
 fDelta[18] = 0.04;
